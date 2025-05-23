@@ -1,0 +1,49 @@
+{
+  "root": true,
+  "extends": [
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:unicorn/recommended",
+    "xo",
+    "xo/browser"
+  ],
+  "env": {
+    "jquery": true
+  },
+  "rules": {
+    "indent": [
+      "error",
+      2
+    ],
+    "no-console": [
+      "error"
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "object-curly-spacing" : [
+      "error",
+      "always"
+    ],
+    "space-before-function-paren": [
+      "error",
+      "never"
+    ],
+    "unicorn/no-array-for-each": "off",
+    "unicorn/no-abusive-eslint-disable": "off"
+  },
+  "ignorePatterns" : [
+    "assets/dist/"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "assets/src/js/main.js"
+      ],
+      "rules": {
+        "unicorn/no-empty-file": "off"
+      }
+    }
+  ]
+}

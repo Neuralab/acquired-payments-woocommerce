@@ -1,0 +1,14 @@
+# Server and OS
+.DS_Store
+.htaccess
+.well-known
+.ftpquota
+
+# Node
+node_modules/
+
+# Composer
+/vendor
+
+# Compiled assets
+/assets/dist

@@ -1,0 +1,35 @@
+{
+  "name": "acquired-com/acquired-com-for-woocommerce",
+  "type": "wordpress-plugin",
+  "description": "Securely accept Cards, Apple Pay & Google Pay on your store using Acquired.com",
+  "license": "GPL-3.0-only",
+  "authors": [
+    {
+      "name": "Acquired",
+      "homepage": "https://acquired.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "AcquiredComForWooCommerce\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.1",
+    "php-di/php-di": "^7.0",
+    "guzzlehttp/guzzle": "^7.9"
+  },
+  "require-dev": {
+    "neuralab/coding-standards": "^1.0"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "scripts": {
+    "lint": "php ./vendor/bin/phpcs . --report=source",
+    "create-pot": "wp i18n make-pot . languages/acquired-com-for-woocommerce.pot --domain=acquired-com-for-woocommerce"
+  }
+}
