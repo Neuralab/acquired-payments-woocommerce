@@ -42,7 +42,7 @@ if ( ! defined( 'ACFW_PLUGIN_BASENAME' ) ) {
 	define( 'ACFW_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 }
 if ( ! defined( 'ACFW_VERSION' ) ) {
-	define( 'ACFW_VERSION', '2.0' );
+	define( 'ACFW_VERSION', '2.0.0-beta' );
 }
 if ( ! defined( 'ACFW_PHP_VERSION' ) ) {
 	define( 'ACFW_PHP_VERSION', '8.1' );
