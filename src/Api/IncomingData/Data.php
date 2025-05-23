@@ -154,7 +154,7 @@ abstract class Data {
 	/**
 	 * Get timestamp.
 	 *
-	 * @return string
+	 * @return int
 	 */
 	public function get_timestamp() : int {
 		return $this->timestamp;
