@@ -366,4 +366,50 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectExceptionMessage( 'Token not found.' );
 		$this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'card_123' );
 	}
+
+	/**
+	 * Test payment_token_exists returns true when token exists.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::payment_token_exists
+	 * @return void
+	 */
+	public function test_payment_token_exists_returns_true() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'get_token' )
+			->once()
+			->andReturn( 'token_123' );
+
+		// Mock WC_Payment_Tokens.
+		$this->mock_wc_payment_tokens_get_tokens(
+			[
+				'user_id'    => 456,
+				'gateway_id' => 'acfw',
+			],
+			[ $token ]
+		);
+
+		// Test the method.
+		$this->assertTrue( $this->get_private_method_value( 'payment_token_exists', 456, 'token_123' ) );
+	}
+
+	/**
+	 * Test payment_token_exists returns false when token doesn't exist.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::payment_token_exists
+	 * @return void
+	 */
+	public function test_payment_token_exists_returns_false() : void {
+		// Mock WC_Payment_Tokens.
+		$this->mock_wc_payment_tokens_get_tokens(
+			[
+				'user_id'    => 456,
+				'gateway_id' => 'acfw',
+			],
+			[]
+		);
+
+		// Test the method.
+		$this->assertFalse( $this->get_private_method_value( 'payment_token_exists', 456, 'card_123' ) );
+	}
 }
