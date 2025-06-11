@@ -18,6 +18,7 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
 use Mockery;
 use Mockery\MockInterface;
 use Exception;
+use stdClass;
 
 /**
  * PaymentMethodServiceTest class.
@@ -42,6 +43,31 @@ class PaymentMethodServiceTest extends TestCase {
 	 * @var PaymentMethodService
 	 */
 	private PaymentMethodService $service;
+
+	/**
+	 * Get test card data.
+	 *
+	 * @param string $status
+	 * @return stdClass
+	 */
+	private function get_test_card_data( string $status ) : stdClass {
+		$cards = [
+			'valid'   => (object) [
+				'scheme'       => 'visa',
+				'number'       => 1234,
+				'expiry_month' => 6,
+				'expiry_year'  => 25,
+			],
+			'expired' => (object) [
+				'scheme'       => 'visa',
+				'number'       => 4567,
+				'expiry_month' => 12,
+				'expiry_year'  => 20,
+			],
+		];
+
+		return $cards[ $status ] ?? $cards['valid'];
+	}
 
 	/**
 	 * Mock WC_Payment_Token_CC.
@@ -411,5 +437,50 @@ class PaymentMethodServiceTest extends TestCase {
 
 		// Test the method.
 		$this->assertFalse( $this->get_private_method_value( 'payment_token_exists', 456, 'card_123' ) );
+	}
+
+	/**
+	 * Test set_token_card_data sets card data correctly.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::set_token_card_data
+	 * @return void
+	 */
+	public function test_set_token_card_data() : void {
+		// Mock WC_Payment_Token_CC.
+
+		$token = $this->mock_wc_payment_token();
+
+		$token->shouldReceive( 'set_card_type' )
+			->once();
+
+		$token->shouldReceive( 'set_last4' )
+			->once()
+			->with( '1234' )
+			->andReturnUsing(
+				function( $value ) {
+					$this->assertIsString( $value );
+				}
+			);
+
+		$token->shouldReceive( 'set_expiry_month' )
+			->once()
+			->with( '06' )
+			->andReturnUsing(
+				function( $value ) {
+					$this->assertIsString( $value );
+				}
+			);
+
+		$token->shouldReceive( 'set_expiry_year' )
+			->once()
+			->with( '2025' )
+			->andReturnUsing(
+				function( $value ) {
+					$this->assertIsString( $value );
+				}
+			);
+
+		// Test the method.
+		$this->get_private_method_value( 'set_token_card_data', $token, $this->get_test_card_data( 'valid' ) );
 	}
 }
