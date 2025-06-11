@@ -17,6 +17,7 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\ScheduleServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
 use Mockery;
 use Mockery\MockInterface;
+use Exception;
 
 /**
  * PaymentMethodServiceTest class.
@@ -288,5 +289,81 @@ class PaymentMethodServiceTest extends TestCase {
 		$result = $this->get_private_method_value( 'get_user_tokens', 456 );
 		$this->assertIsArray( $result );
 		$this->assertEmpty( $result );
+	}
+
+	/**
+	 * Test get_token_by_user_and_card_id returns token when found.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
+	 * @return void
+	 */
+	public function test_get_token_by_user_and_card_id_success() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'get_token' )
+			->once()
+			->andReturn( 'token_123' );
+
+		// Mock WC_Payment_Tokens.
+		$this->mock_wc_payment_tokens_get_tokens(
+			[
+				'user_id'    => 456,
+				'gateway_id' => 'acfw',
+			],
+			[ $token ]
+		);
+
+		// Test the method.
+		$this->assertInstanceOf( 'WC_Payment_Token_CC', $this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'token_123' ) );
+	}
+
+	/**
+	 * Test get_token_by_user_and_card_id throws exception when token id is not found.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
+	 * @return void
+	 */
+	public function test_get_token_by_user_and_token_id_not_found() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'get_token' )
+			->once()
+			->andReturn( 'token_456' );
+
+		// Mock WC_Payment_Tokens.
+		$this->mock_wc_payment_tokens_get_tokens(
+			[
+				'user_id'    => 456,
+				'gateway_id' => 'acfw',
+			],
+			[ $token ]
+		);
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Token not found.' );
+		$this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'token_123' );
+	}
+
+	/**
+	 * Test get_token_by_user_and_card_id throws exception when no tokens exist.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
+	 * @return void
+	 */
+	public function test_get_token_by_user_and_card_id_no_tokens() : void {
+		// Mock WC_Payment_Token_CC.
+		$this->mock_wc_payment_tokens_get_tokens(
+			[
+				'user_id'    => 456,
+				'gateway_id' => 'acfw',
+			],
+			[]
+		);
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Token not found.' );
+		$this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'card_123' );
 	}
 }
