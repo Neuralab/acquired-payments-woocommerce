@@ -122,6 +122,16 @@ class PaymentMethodServiceTest extends TestCase {
 	}
 
 	/**
+	 * Mock WC_Payment_Token_CC instance creation.
+	 *
+	 * @param MockInterface $token Token mock to return
+	 * @return void
+	 */
+	private function mock_wc_payment_token_instance( MockInterface $token ) : void {
+		$this->set_private_property_value( 'payment_token_class', get_class( $token ) );
+	}
+
+	/**
 	 * Set up the test case.
 	 *
 	 * @return void
@@ -482,5 +492,96 @@ class PaymentMethodServiceTest extends TestCase {
 
 		// Test the method.
 		$this->get_private_method_value( 'set_token_card_data', $token, $this->get_test_card_data( 'valid' ) );
+	}
+
+	/**
+	 * Test create_token.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
+	 * @return void
+	 */
+	public function test_create_token() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
+		$token->shouldReceive( 'set_gateway_id' )->once()->with( 'acfw' );
+		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
+		$token->shouldReceive( 'validate' )->once()->andReturn( true );
+		$token->shouldReceive( 'save' )->once();
+
+		// Mock create_token_instance.
+		$this->mock_wc_payment_token_instance( $token );
+
+		// Test the method.
+		$this->get_private_method_value( 'create_token', 'token_123', $this->get_test_card_data( 'valid' ), 456 );
+	}
+
+	/**
+	 * Test create_token with order.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
+	 * @return void
+	 */
+	public function test_create_token_with_order() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
+		$token->shouldReceive( 'set_gateway_id' )->once()->with( 'acfw' );
+		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
+		$token->shouldReceive( 'validate' )->once()->andReturn( true );
+		$token->shouldReceive( 'save' )->once();
+
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'add_payment_token' )
+			->once()
+			->withArgs(
+				function( $token ) {
+					return $token instanceof MockInterface;
+				}
+			);
+		$order->shouldReceive( 'save' )->once();
+
+		// Mock create_token_instance.
+		$this->mock_wc_payment_token_instance( $token );
+
+		// Test the method.
+		$this->get_private_method_value( 'create_token', 'token_123', $this->get_test_card_data( 'valid' ), 456, $order );
+	}
+
+	/**
+	 * Test create_token throws exception on validation failure.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
+	 * @return void
+	 */
+	public function test_create_token_throws_exception_on_validation_failure() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '4567' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '12' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2020' );
+		$token->shouldReceive( 'set_gateway_id' )->once()->with( 'acfw' );
+		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
+		$token->shouldReceive( 'validate' )->once()->andReturn( false );
+		$token->shouldNotReceive( 'save' );
+
+		// Mock create_token_instance.
+		$this->mock_wc_payment_token_instance( $token );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Failed to validate token.' );
+		$this->get_private_method_value( 'create_token', 'token_123', $this->get_test_card_data( 'expired' ), 456 );
 	}
 }
