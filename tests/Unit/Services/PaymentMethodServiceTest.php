@@ -44,33 +44,6 @@ class PaymentMethodServiceTest extends TestCase {
 	private PaymentMethodService $service;
 
 	/**
-	 * Set up the test case.
-	 *
-	 * @return void
-	 */
-	protected function setUp() : void {
-		parent::setUp();
-
-		$this->mock_api_client();
-		$this->mock_logger_service();
-		$this->mock_customer_service();
-		$this->mock_schedule_service();
-		$this->mock_settings_service();
-
-		$this->service = new PaymentMethodService(
-			$this->get_api_client(),
-			$this->get_customer_service(),
-			$this->get_logger_service(),
-			$this->get_schedule_service(),
-			$this->get_settings_service(),
-			'WC_Payment_Token_CC',
-			'WC_Payment_Tokens',
-		);
-
-		$this->initialize_reflection( $this->service );
-	}
-
-	/**
 	 * Mock WC_Payment_Token_CC.
 	 *
 	 * @return MockInterface
@@ -120,6 +93,33 @@ class PaymentMethodServiceTest extends TestCase {
 			->andReturn( $return );
 
 		return $payment_tokens;
+	}
+
+	/**
+	 * Set up the test case.
+	 *
+	 * @return void
+	 */
+	protected function setUp() : void {
+		parent::setUp();
+
+		$this->mock_api_client();
+		$this->mock_logger_service();
+		$this->mock_customer_service();
+		$this->mock_schedule_service();
+		$this->mock_settings_service();
+
+		$this->service = new PaymentMethodService(
+			$this->get_api_client(),
+			$this->get_customer_service(),
+			$this->get_logger_service(),
+			$this->get_schedule_service(),
+			$this->get_settings_service(),
+			'WC_Payment_Token_CC',
+			'WC_Payment_Tokens',
+		);
+
+		$this->initialize_reflection( $this->service );
 	}
 
 	/**

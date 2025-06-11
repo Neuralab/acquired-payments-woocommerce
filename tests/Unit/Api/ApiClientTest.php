@@ -59,20 +59,6 @@ class ApiClientTest extends TestCase {
 	private ApiClient $test_class;
 
 	/**
-	 * Set up the test case.
-	 */
-	protected function setUp() : void {
-		parent::setUp();
-
-		$this->mock_logger_service();
-		$this->mock_settings_service();
-		$this->client = Mockery::mock( Client::class );
-
-		$this->test_class = new ApiClient( $this->client, $this->get_logger_service(), $this->get_settings_service() );
-		$this->initialize_reflection( $this->test_class );
-	}
-
-	/**
 	 * Mock get_api_credentials process.
 	 *
 	 * @return void
@@ -269,6 +255,20 @@ class ApiClientTest extends TestCase {
 				->once()
 				->with( 'Access token creation failed.', 'error', Mockery::any() );
 		}
+	}
+
+	/**
+	 * Set up the test case.
+	 */
+	protected function setUp() : void {
+		parent::setUp();
+
+		$this->mock_logger_service();
+		$this->mock_settings_service();
+		$this->client = Mockery::mock( Client::class );
+
+		$this->test_class = new ApiClient( $this->client, $this->get_logger_service(), $this->get_settings_service() );
+		$this->initialize_reflection( $this->test_class );
 	}
 
 	/**

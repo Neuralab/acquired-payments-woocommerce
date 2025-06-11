@@ -43,40 +43,6 @@ class AdminServiceTest extends TestCase {
 	private int $order_id = 666;
 
 	/**
-	 * Set up the test case.
-	 *
-	 * @return void
-	 */
-	protected function setUp() : void {
-		parent::setUp();
-
-		// Clear $_GET before each test.
-		$_GET = [];
-
-		$this->mock_assets_service();
-		$this->mock_settings_service();
-
-		$this->service = new AdminService(
-			$this->get_assets_service(),
-			$this->get_settings_service()
-		);
-
-		$this->initialize_reflection( $this->service );
-	}
-
-	/**
-	 * Tear down the test case.
-	 *
-	 * @return void
-	 */
-	protected function tearDown() : void {
-		// Clear $_GET after each test.
-		$_GET = [];
-
-		parent::tearDown();
-	}
-
-	/**
 	 * Mock admin screen.
 	 *
 	 * @param string|null $screen_id
@@ -175,6 +141,40 @@ class AdminServiceTest extends TestCase {
 			->andReturn( $order );
 
 		return $order;
+	}
+
+	/**
+	 * Set up the test case.
+	 *
+	 * @return void
+	 */
+	protected function setUp() : void {
+		parent::setUp();
+
+		// Clear $_GET before each test.
+		$_GET = [];
+
+		$this->mock_assets_service();
+		$this->mock_settings_service();
+
+		$this->service = new AdminService(
+			$this->get_assets_service(),
+			$this->get_settings_service()
+		);
+
+		$this->initialize_reflection( $this->service );
+	}
+
+	/**
+	 * Tear down the test case.
+	 *
+	 * @return void
+	 */
+	protected function tearDown() : void {
+		// Clear $_GET after each test.
+		$_GET = [];
+
+		parent::tearDown();
 	}
 
 	/**
