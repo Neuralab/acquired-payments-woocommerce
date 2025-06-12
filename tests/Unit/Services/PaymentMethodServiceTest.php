@@ -16,6 +16,7 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\ScheduleServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
 use AcquiredComForWooCommerce\Api\Response\Card;
+use AcquiredComForWooCommerce\Api\Response\Transaction;
 use Mockery;
 use Mockery\MockInterface;
 use Exception;
@@ -708,5 +709,87 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Card is not active.' );
 		$this->get_private_method_value( 'get_card', 'token_123' );
+	}
+
+	/**
+	 * Test get_card_id_from_transaction returns card ID.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_card_id_from_transaction
+	 * @return void
+	 */
+	public function test_get_card_id_from_transaction() : void {
+		// Mock Transaction.
+		$transaction = Mockery::mock( Transaction::class );
+		$transaction->shouldReceive( 'request_is_error' )
+			->once()
+			->andReturn( false );
+		$transaction->shouldReceive( 'get_card_id' )
+			->twice()
+			->andReturn( 'token_123' );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_transaction' )
+			->once()
+			->with( 'transaction_123' )
+			->andReturn( $transaction );
+
+		// Test the method.
+		$this->assertEquals( 'token_123', $this->get_private_method_value( 'get_card_id_from_transaction', 'transaction_123' ) );
+	}
+
+	/**
+	 * Test get_card_id_from_transaction throws exception when request fails.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_card_id_from_transaction
+	 * @return void
+	 */
+	public function test_get_card_id_from_transaction_throws_exception_when_request_fails() : void {
+		// Mock Transaction.
+		$transaction = Mockery::mock( Transaction::class );
+		$transaction->shouldReceive( 'request_is_error' )
+			->once()
+			->andReturn( true );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_transaction' )
+			->once()
+			->with( 'transaction_123' )
+			->andReturn( $transaction );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Card ID retrieval failed.' );
+		$this->get_private_method_value( 'get_card_id_from_transaction', 'transaction_123' );
+	}
+
+	/**
+	 * Test get_card_id_from_transaction throws exception when card ID not found.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_card_id_from_transaction
+	 * @return void
+	 */
+	public function test_get_card_id_from_transaction_throws_exception_when_card_id_not_found() : void {
+		// Mock Transaction.
+		$transaction = Mockery::mock( Transaction::class );
+		$transaction->shouldReceive( 'request_is_error' )
+			->once()
+			->andReturn( false );
+		$transaction->shouldReceive( 'get_card_id' )
+			->once()
+			->andReturn( null );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_transaction' )
+			->once()
+			->with( 'transaction_123' )
+			->andReturn( $transaction );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Card ID not found.' );
+		$this->get_private_method_value( 'get_card_id_from_transaction', 'transaction_123' );
 	}
 }
