@@ -1068,4 +1068,126 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectExceptionMessage( 'No valid customer ID in incoming data.' );
 		$this->service->schedule_save_payment_method( $webhook, 'test_hash' );
 	}
+
+	/**
+	 * Test save_payment_method_from_customer success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_customer
+	 * @return void
+	 */
+	public function test_save_payment_method_from_customer_success() : void {
+		// Mock SettingsService.
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
+			->once()
+			->with( 'tokenization' )
+			->andReturn( true );
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )
+			->once()
+			->andReturn( '456-add_payment_method_key' );
+		$webhook->shouldReceive( 'get_card_id' )
+			->once()
+			->andReturn( 'card_123' );
+		$webhook->shouldReceive( 'get_type' )
+			->times( 3 )
+			->andReturn( 'webhook' );
+		$webhook->shouldReceive( 'get_log_data' )
+			->times( 3 )
+			->andReturn( [] );
+
+		// Mock WC_Customer.
+		$customer = Mockery::mock( 'overload:WC_Customer' );
+		$customer->shouldReceive( 'get_id' )
+			->times( 4 )
+			->andReturn( 456 );
+
+		// Mock Card.
+		$card = Mockery::mock( Card::class );
+		$card->shouldReceive( 'get_card_id' )
+			->once()
+			->andReturn( 'card_123' );
+		$card->shouldReceive( 'get_card_data' )
+			->once()
+			->andReturn(
+				$this->get_test_card_data( 'valid' )
+			);
+		$card->shouldReceive( 'is_active' )
+			->once()
+			->andReturn( true );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_card' )
+			->once()
+			->with( 'card_123' )
+			->andReturn( $card );
+
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_token' )->once()->with( 'card_123' );
+		$token->shouldReceive( 'set_gateway_id' )->once();
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
+		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
+		$token->shouldReceive( 'validate' )->once()->andReturn( true );
+		$token->shouldReceive( 'save' )->once();
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->times( 3 )
+			->withArgs(
+				function( $message ) {
+					return in_array(
+						$message,
+						[
+							'User found successfully from incoming webhook data. User ID: 456.',
+							'Payment method found successfully from incoming webhook data. User ID: 456.',
+							'Payment method saved successfully from incoming webhook data. User ID: 456.',
+						],
+						true
+					);
+				}
+			);
+
+		// Test the method.
+		$this->service->save_payment_method_from_customer( $webhook );
+	}
+
+	/**
+	 * Test save_payment_method_from_customer throws exception when tokenization disabled.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_customer
+	 * @return void
+	 */
+	public function test_save_payment_method_from_customer_throws_exception_when_tokenization_disabled() : void {
+		// Mock SettingsService.
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
+			->once()
+			->with( 'tokenization' )
+			->andReturn( false );
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+			$webhook->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+		->shouldReceive( 'log' )
+		->once()
+		->with( 'Payment method saving failed. Tokenization is disabled.', 'error', [] );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Payment method saving failed. Tokenization is disabled.' );
+		$this->service->save_payment_method_from_customer( $webhook );
+	}
 }
