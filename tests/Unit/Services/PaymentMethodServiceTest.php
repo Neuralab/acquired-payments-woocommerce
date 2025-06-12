@@ -1214,7 +1214,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->with( 'token_123' )
 			->andReturn( $card );
 
-		// Mock Token.
+		// Mock WC_Payment_Token_CC.
 		$token = $this->mock_wc_payment_token();
 		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_gateway_id' )->once();
