@@ -792,4 +792,82 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectExceptionMessage( 'Card ID not found.' );
 		$this->get_private_method_value( 'get_card_id_from_transaction', 'transaction_123' );
 	}
+
+	/**
+	 * Test deactivate_card success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::deactivate_card
+	 * @return void
+	 */
+	public function test_deactivate_card_success() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'get_token' )
+			->once()
+			->andReturn( 'token_123' );
+
+		// Mock Card.
+		$response = Mockery::mock( Card::class );
+		$response->shouldReceive( 'request_is_success' )
+			->once()
+			->andReturn( true );
+		$response->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'update_card' )
+			->once()
+			->with( 'token_123', [ 'is_active' => false ] )
+			->andReturn( $response );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with( 'Payment method deletion successful.', 'debug', [] );
+
+		// Test the method.
+		$this->service->deactivate_card( $token );
+	}
+
+	/**
+	 * Test deactivate_card failure.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::deactivate_card
+	 * @return void
+	 */
+	public function test_deactivate_card_failure() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+			$token->shouldReceive( 'get_token' )
+			->once()
+			->andReturn( 'token_123' );
+
+		// Mock Card.
+		$response = Mockery::mock( Card::class );
+		$response->shouldReceive( 'request_is_success' )
+			->once()
+			->andReturn( false );
+		$response->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'update_card' )
+			->once()
+			->with( 'token_123', [ 'is_active' => false ] )
+			->andReturn( $response );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with( 'Payment method deletion failed.', 'error', [] );
+
+		// Test the method.
+		$this->service->deactivate_card( $token );
+	}
 }
