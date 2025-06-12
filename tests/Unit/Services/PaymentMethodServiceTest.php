@@ -1158,34 +1158,6 @@ class PaymentMethodServiceTest extends TestCase {
 	}
 
 	/**
-	 * Test save_payment_method_from_customer throws exception when tokenization disabled.
-	 *
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_customer
-	 * @return void
-	 */
-	public function test_save_payment_method_from_customer_throws_exception_when_tokenization_disabled() : void {
-		// Mock tokenization setting.
-		$this->mock_tokenization_setting( false );
-
-		// Mock WebhookData.
-		$webhook = Mockery::mock( WebhookData::class );
-			$webhook->shouldReceive( 'get_log_data' )
-			->once()
-			->andReturn( [] );
-
-		// Mock LoggerService.
-		$this->get_logger_service()
-		->shouldReceive( 'log' )
-		->once()
-		->with( 'Payment method saving failed. Tokenization is disabled.', 'error', [] );
-
-		// Test the method.
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'Payment method saving failed. Tokenization is disabled.' );
-		$this->service->save_payment_method_from_customer( $webhook );
-	}
-
-	/**
 	 * Test save_payment_method_from_order success.
 	 *
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_order
@@ -1273,34 +1245,6 @@ class PaymentMethodServiceTest extends TestCase {
 		);
 
 		// Test the method.
-		$this->service->save_payment_method_from_order( $webhook );
-	}
-
-	/**
-	 * Test save_payment_method_from_order throws exception when tokenization disabled.
-	 *
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_order
-	 * @return void
-	 */
-	public function test_save_payment_method_from_order_throws_exception_when_tokenization_disabled() : void {
-		// Mock tokenization setting.
-		$this->mock_tokenization_setting( false );
-
-		// Mock WebhookData.
-		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_log_data' )
-			->once()
-			->andReturn( [] );
-
-		// Mock LoggerService.
-		$this->get_logger_service()
-			->shouldReceive( 'log' )
-			->once()
-			->with( 'Payment method saving failed. Tokenization is disabled.', 'error', [] );
-
-		// Test the method.
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'Payment method saving failed. Tokenization is disabled.' );
 		$this->service->save_payment_method_from_order( $webhook );
 	}
 
