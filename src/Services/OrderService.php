@@ -431,6 +431,7 @@ class OrderService {
 			$order->set_transaction_id( $transaction->get_transaction_id() );
 			$order->update_meta_data( '_acfw_transaction_status', $transaction->get_status() );
 			$order->update_meta_data( '_acfw_order_time_updated', $transaction->get_created_timestamp() );
+			$order->update_meta_data( '_acfw_version', $this->settings_service->config['version'] );
 			$order->save();
 
 			switch ( $order->get_meta( '_acfw_transaction_status' ) ) {
@@ -451,6 +452,7 @@ class OrderService {
 					} else {
 						$order->payment_complete();
 						$order->update_meta_data( '_acfw_order_state', 'completed' );
+						$order->update_meta_data( '_acfw_order_time_completed', $transaction->get_created_timestamp() );
 						$order->add_order_note(
 							sprintf(
 								/* translators: %s is transaction ID. */
@@ -580,6 +582,7 @@ class OrderService {
 			$order->payment_complete( $response->get_transaction_id() );
 
 			$order->update_meta_data( '_acfw_order_state', 'completed' );
+			$order->update_meta_data( '_acfw_order_time_completed', $this->get_transaction_time_updated( $response->get_transaction_id() ) );
 			$order->update_meta_data( '_acfw_order_time_updated', $this->get_transaction_time_updated( $response->get_transaction_id() ) );
 			$order->save();
 
@@ -656,7 +659,7 @@ class OrderService {
 			return 'error';
 		}
 
-		if ( 'authorisation' === $order->get_meta( '_acfw_transaction_type' ) && 'completed' === $order->get_meta( '_acfw_order_state' ) && ! $this->is_day_older( (int) $order->get_meta( '_acfw_order_time_updated' ) ) ) {
+		if ( 'authorisation' === $order->get_meta( '_acfw_transaction_type' ) && 'completed' === $order->get_meta( '_acfw_order_state' ) && ! $this->is_day_older( (int) $order->get_meta( '_acfw_order_time_completed' ) ) ) {
 			$order->add_order_note( __( 'Order cancellation failed. Captured orders can be canceled the next day.', 'acquired-com-for-woocommerce' ) );
 
 			$this->logger_service->log( sprintf( 'Order cancellation failed. Captured orders can be canceled the next day. Order ID: %s', $order->get_id() ), 'debug' );
@@ -748,7 +751,7 @@ class OrderService {
 				$error     = __( 'Order has already been cancelled.', 'acquired-com-for-woocommerce' );
 				$log_error = 'Order has been cancelled.';
 				break;
-			case 'authorisation' === $order->get_meta( '_acfw_transaction_type' ) && 'completed' === $order->get_meta( '_acfw_order_state' ) && ! $this->is_day_older( (int) $order->get_meta( '_acfw_order_time_updated' ) ):
+			case 'authorisation' === $order->get_meta( '_acfw_transaction_type' ) && 'completed' === $order->get_meta( '_acfw_order_state' ) && ! $this->is_day_older( (int) $order->get_meta( '_acfw_order_time_completed' ) ):
 				$error     = __( 'Captured orders can be refunded the next day.', 'acquired-com-for-woocommerce' );
 				$log_error = 'Transaction can\'t be refunded until the next day.';
 				break;
@@ -757,15 +760,19 @@ class OrderService {
 				break;
 		}
 
-		if ( $amount < floatval( $order->get_total() ) ) {
-			if ( 'refunded_partial' !== $order->get_meta( '_acfw_order_state' ) && ! $this->is_day_older( (int) $order->get_meta( '_acfw_order_time_updated' ) ) ) {
-				throw new Exception( __( 'Partial refunds are only available on the next day.', 'acquired-com-for-woocommerce' ) );
-			}
-		}
-
 		if ( $error ) {
 			$this->logger_service->log( sprintf( 'Payment refund failed. Order ID: %s. %s', $order->get_id(), $log_error ), 'debug' );
 			throw new Exception( $error );
+		}
+
+		if ( $amount < floatval( $order->get_total() ) ) {
+			$date = 'authorised' === $order->get_meta( '_acfw_order_state' ) ? $order->get_meta( '_acfw_order_time_updated' ) : $order->get_meta( '_acfw_order_time_completed' );
+
+			if ( ! $this->is_day_older( (int) $date ) ) {
+				$this->logger_service->log( sprintf( 'Payment refund failed. Partial refunds are only available on the next day. Order ID: %s.', $order->get_id() ), 'debug' );
+
+				throw new Exception( __( 'Partial refunds are only available on the next day.', 'acquired-com-for-woocommerce' ) );
+			}
 		}
 
 		return true;

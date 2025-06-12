@@ -34,6 +34,11 @@ mix.disableSuccessNotifications();
 // This is a folder where all your assets will get compiled to.
 mix.setPublicPath(distributionPath);
 
+// Disable manifest JSON file.
+mix.options({
+  manifest: false,
+});
+
 // Clean distributionPath
 // This removes the folder where we build all of our assets when we start Mix.
 // Prevents having stale assets like images in distributionPath that remain after we remove them in sourcePath.
