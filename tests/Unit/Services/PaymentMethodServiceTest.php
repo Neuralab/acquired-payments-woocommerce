@@ -402,7 +402,7 @@ class PaymentMethodServiceTest extends TestCase {
 		// Test the method.
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Token not found.' );
-		$this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'card_123' );
+		$this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'token_123' );
 	}
 
 	/**
@@ -448,7 +448,7 @@ class PaymentMethodServiceTest extends TestCase {
 		);
 
 		// Test the method.
-		$this->assertFalse( $this->get_private_method_value( 'payment_token_exists', 456, 'card_123' ) );
+		$this->assertFalse( $this->get_private_method_value( 'payment_token_exists', 456, 'token_123' ) );
 	}
 
 	/**
