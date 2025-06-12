@@ -326,7 +326,7 @@ class PaymentMethodService {
 			$this->logger_service->log( sprintf( 'Save payment method scheduled successfully from incoming webhook data. User ID: %s.', $customer->get_id() ), 'debug', $data->get_log_data() );
 		} catch ( Exception $exception ) {
 			$error = $exception->getMessage();
-			$this->logger_service->log( sprintf( 'Error scheduling save payment method from incoming webhook data. Error: "%s."', $error ), 'error', $data->get_log_data() );
+			$this->logger_service->log( sprintf( 'Error scheduling save payment method from incoming webhook data. Error: "%s".', $error ), 'error', $data->get_log_data() );
 			throw new Exception( $error );
 		}
 	}
