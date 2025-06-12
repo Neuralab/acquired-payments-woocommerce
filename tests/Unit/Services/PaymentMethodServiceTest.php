@@ -20,6 +20,7 @@ use AcquiredComForWooCommerce\Api\Response\Transaction;
 use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
 use Mockery;
 use Mockery\MockInterface;
+use Brain\Monkey\Functions;
 use Exception;
 use stdClass;
 
@@ -1182,5 +1183,155 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Payment method saving failed. Tokenization is disabled.' );
 		$this->service->save_payment_method_from_customer( $webhook );
+	}
+
+	/**
+	 * Test save_payment_method_from_order success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_order
+	 * @return void
+	 */
+	public function test_save_payment_method_from_order_success() : void {
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( true );
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )
+			->once()
+			->andReturn( '789-wc_order_key' );
+		$webhook->shouldReceive( 'get_card_id' )
+			->once()
+			->andReturn( 'card_123' );
+		$webhook->shouldReceive( 'get_log_data' )
+			->times( 3 )
+			->andReturn( [] );
+
+		// Mock WC_Order.
+
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_id' )->times( 3 )->andReturn( 789 );
+		$order->shouldReceive( 'get_order_key' )->once()->andReturn( 'wc_order_key' );
+		$order->shouldReceive( 'get_user_id' )->once()->andReturn( 456 );
+		$order->shouldReceive( 'add_payment_token' )->once();
+		$order->shouldReceive( 'save' )->once();
+
+		Functions\expect( 'wc_get_order' )
+			->once()
+			->with( '789' )
+			->andReturn( $order );
+
+		// Mock Card.
+		$card = Mockery::mock( Card::class );
+		$card->shouldReceive( 'get_card_id' )
+			->once()
+			->andReturn( 'card_123' );
+		$card->shouldReceive( 'get_card_data' )
+			->once()
+			->andReturn(
+				$this->get_test_card_data( 'valid' )
+			);
+		$card->shouldReceive( 'is_active' )
+			->once()
+			->andReturn( true );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_card' )
+			->once()
+			->with( 'token_123' )
+			->andReturn( $card );
+
+		// Mock Token.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
+		$token->shouldReceive( 'set_gateway_id' )->once();
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
+		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
+		$token->shouldReceive( 'validate' )->once()->andReturn( true );
+		$token->shouldReceive( 'save' )->once();
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+		->shouldReceive( 'log' )
+		->times( 3 )
+		->withArgs(
+			function( $message ) {
+				return in_array(
+					$message,
+					[
+						'Order found successfully from incoming webhook data. Order ID: 789.',
+						'Payment method found successfully from incoming webhook data. Order ID: 789.',
+						'Payment method saved successfully from incoming webhook data. Order ID: 789.',
+					],
+					true
+				);
+			}
+		);
+
+		// Test the method.
+		$this->service->save_payment_method_from_order( $webhook );
+	}
+
+	/**
+	 * Test save_payment_method_from_order throws exception when tokenization disabled.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_order
+	 * @return void
+	 */
+	public function test_save_payment_method_from_order_throws_exception_when_tokenization_disabled() : void {
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( false );
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with( 'Payment method saving failed. Tokenization is disabled.', 'error', [] );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Payment method saving failed. Tokenization is disabled.' );
+		$this->service->save_payment_method_from_order( $webhook );
+	}
+
+	/**
+	 * Test save_payment_method_from_order throws exception when order not found.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_order
+	 * @return void
+	 */
+	public function test_save_payment_method_from_order_throws_exception_when_order_not_found() : void {
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( true );
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )
+			->once()
+			->andReturn( 'invalid_order' );
+		$webhook->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with( 'Payment method saving failed. No valid order ID in incoming data.', 'error', [] );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'No valid order ID in incoming data.' );
+		$this->service->save_payment_method_from_order( $webhook );
 	}
 }
