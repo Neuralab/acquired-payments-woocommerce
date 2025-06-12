@@ -74,7 +74,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Mock WC_Payment_Token_CC.
 	 *
-	 * @return MockInterface
+	 * @return MockInterface&\WC_Payment_Token_CC
 	 */
 	private function mock_wc_payment_token() : MockInterface {
 		// Mock WC_Payment_Token_CC.
