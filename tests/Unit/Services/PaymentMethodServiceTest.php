@@ -18,6 +18,7 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
 use AcquiredComForWooCommerce\Api\Response\Card;
 use AcquiredComForWooCommerce\Api\Response\Transaction;
 use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
+use AcquiredComForWooCommerce\Tests\Framework\Traits\IncomingDataTestData;
 use Mockery;
 use Mockery\MockInterface;
 use Exception;
@@ -983,5 +984,88 @@ class PaymentMethodServiceTest extends TestCase {
 			},
 			$data
 		);
+	}
+
+	/**
+	 * Test schedule_save_payment_method success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::schedule_save_payment_method
+	 * @return void
+	 */
+	public function test_schedule_save_payment_method_success() : void {
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )
+			->once()
+			->andReturn( '456-add_payment_method_key' );
+		$webhook->shouldReceive( 'get_incoming_data' )
+			->once()
+			->andReturn( [ 'test_data' ] );
+		$webhook->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock WC_Customer.
+		$customer = Mockery::mock( 'overload:WC_Customer' );
+		$customer->shouldReceive( 'get_id' )
+			->once()
+			->andReturn( 456 );
+
+		// Mock ScheduleService.
+		$this->get_schedule_service()
+			->shouldReceive( 'schedule' )
+			->once()
+			->with(
+				'acfw_scheduled_save_payment_method',
+				[
+					'webhook_data' => json_encode( [ 'test_data' ] ),
+					'hash'         => 'test_hash',
+				]
+			);
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				'Save payment method scheduled successfully from incoming webhook data. User ID: 456.',
+				'debug',
+				[]
+			);
+
+		// Test the method.
+		$this->service->schedule_save_payment_method( $webhook, 'test_hash' );
+	}
+
+	/**
+	 * Test schedule_save_payment_method throws exception when fails.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::schedule_save_payment_method
+	 * @return void
+	 */
+	public function test_schedule_save_payment_method_throws_exception_when_fails() : void {
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )
+			->once()
+			->andReturn( 'invalid_order_id' );
+		$webhook->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				'Error scheduling save payment method from incoming webhook data. Error: "No valid customer ID in incoming data.".',
+				'error',
+				[]
+			);
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'No valid customer ID in incoming data.' );
+		$this->service->schedule_save_payment_method( $webhook, 'test_hash' );
 	}
 }
