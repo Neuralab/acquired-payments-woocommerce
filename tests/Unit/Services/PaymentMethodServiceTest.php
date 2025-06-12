@@ -1088,7 +1088,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->andReturn( '456-add_payment_method_key' );
 		$webhook->shouldReceive( 'get_card_id' )
 			->once()
-			->andReturn( 'card_123' );
+			->andReturn( 'token_123' );
 		$webhook->shouldReceive( 'get_type' )
 			->times( 3 )
 			->andReturn( 'webhook' );
@@ -1106,7 +1106,7 @@ class PaymentMethodServiceTest extends TestCase {
 		$card = Mockery::mock( Card::class );
 		$card->shouldReceive( 'get_card_id' )
 			->once()
-			->andReturn( 'card_123' );
+			->andReturn( 'token_123' );
 		$card->shouldReceive( 'get_card_data' )
 			->once()
 			->andReturn(
@@ -1120,12 +1120,12 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->get_api_client()
 			->shouldReceive( 'get_card' )
 			->once()
-			->with( 'card_123' )
+			->with( 'token_123' )
 			->andReturn( $card );
 
 		// Mock WC_Payment_Token_CC.
 		$token = $this->mock_wc_payment_token();
-		$token->shouldReceive( 'set_token' )->once()->with( 'card_123' );
+		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_gateway_id' )->once();
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
 		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
@@ -1202,7 +1202,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->andReturn( '789-wc_order_key' );
 		$webhook->shouldReceive( 'get_card_id' )
 			->once()
-			->andReturn( 'card_123' );
+			->andReturn( 'token_123' );
 		$webhook->shouldReceive( 'get_log_data' )
 			->times( 3 )
 			->andReturn( [] );
@@ -1225,7 +1225,7 @@ class PaymentMethodServiceTest extends TestCase {
 		$card = Mockery::mock( Card::class );
 		$card->shouldReceive( 'get_card_id' )
 			->once()
-			->andReturn( 'card_123' );
+			->andReturn( 'token_123' );
 		$card->shouldReceive( 'get_card_data' )
 			->once()
 			->andReturn(
