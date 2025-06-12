@@ -18,7 +18,6 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
 use AcquiredComForWooCommerce\Api\Response\Card;
 use AcquiredComForWooCommerce\Api\Response\Transaction;
 use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
-use AcquiredComForWooCommerce\Tests\Framework\Traits\IncomingDataTestData;
 use Mockery;
 use Mockery\MockInterface;
 use Exception;
