@@ -584,4 +584,46 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectExceptionMessage( 'Failed to validate token.' );
 		$this->get_private_method_value( 'create_token', 'token_123', $this->get_test_card_data( 'expired' ), 456 );
 	}
+
+	/**
+	 * Test update_token.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_token
+	 * @return void
+	 */
+	public function test_update_token() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
+		$token->shouldReceive( 'validate' )->once()->andReturn( true );
+		$token->shouldReceive( 'save' )->once();
+
+		// Test the method.
+		$this->get_private_method_value( 'update_token', $token, $this->get_test_card_data( 'valid' ) );
+	}
+
+	/**
+	 * Test update_token throws exception on validation failure.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_token
+	 * @return void
+	 */
+	public function test_update_token_throws_exception_on_validation_failure() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '4567' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '12' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2020' );
+		$token->shouldReceive( 'validate' )->once()->andReturn( false );
+		$token->shouldNotReceive( 'save' );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Failed to validate token.' );
+		$this->get_private_method_value( 'update_token', $token, $this->get_test_card_data( 'expired' ) );
+	}
 }
