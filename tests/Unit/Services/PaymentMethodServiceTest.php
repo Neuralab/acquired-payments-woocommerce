@@ -1228,21 +1228,21 @@ class PaymentMethodServiceTest extends TestCase {
 
 		// Mock LoggerService.
 		$this->get_logger_service()
-		->shouldReceive( 'log' )
-		->times( 3 )
-		->withArgs(
-			function( $message ) {
-				return in_array(
-					$message,
-					[
-						'Order found successfully from incoming webhook data. Order ID: 789.',
-						'Payment method found successfully from incoming webhook data. Order ID: 789.',
-						'Payment method saved successfully from incoming webhook data. Order ID: 789.',
-					],
-					true
-				);
-			}
-		);
+			->shouldReceive( 'log' )
+			->times( 3 )
+			->withArgs(
+				function( $message ) {
+					return in_array(
+						$message,
+						[
+							'Order found successfully from incoming webhook data. Order ID: 789.',
+							'Payment method found successfully from incoming webhook data. Order ID: 789.',
+							'Payment method saved successfully from incoming webhook data. Order ID: 789.',
+						],
+						true
+					);
+				}
+			);
 
 		// Test the method.
 		$this->service->save_payment_method_from_order( $webhook );
