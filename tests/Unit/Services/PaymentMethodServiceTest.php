@@ -17,6 +17,7 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\ScheduleServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
 use AcquiredComForWooCommerce\Api\Response\Card;
 use AcquiredComForWooCommerce\Api\Response\Transaction;
+use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
 use Mockery;
 use Mockery\MockInterface;
 use Exception;
@@ -869,5 +870,118 @@ class PaymentMethodServiceTest extends TestCase {
 
 		// Test the method.
 		$this->service->deactivate_card( $token );
+	}
+
+	/**
+	 * Test process_payment_method success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::process_payment_method
+	 * @return void
+	 */
+	public function test_process_payment_method_success() : void {
+		// Mock SettingsService.
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
+			->once()
+			->with( 'tokenization' )
+			->andReturn( true );
+
+		// Mock WebhookData.
+		$data = Mockery::mock( WebhookData::class );
+		$data->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with( 'Test success message', 'debug', [] );
+
+		// Test the method.
+		$this->get_private_method_value(
+			'process_payment_method',
+			'saving',
+			function( $data, $log ) {
+				$log( 'Test success message' );
+			},
+			$data
+		);
+	}
+
+	/**
+	 * Test process_payment_method throws exception when tokenization disabled.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::process_payment_method
+	 * @return void
+	 */
+	public function test_process_payment_method_throws_exception_when_tokenization_disabled() : void {
+		// Mock SettingsService.
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
+			->once()
+			->with( 'tokenization' )
+			->andReturn( false );
+
+		// Mock WebhookData.
+		$data = Mockery::mock( WebhookData::class );
+		$data->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with( 'Payment method saving failed. Tokenization is disabled.', 'error', [] );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Payment method saving failed. Tokenization is disabled.' );
+		$this->get_private_method_value(
+			'process_payment_method',
+			'saving',
+			function() {},
+			$data
+		);
+	}
+
+	/**
+	 * Test process_payment_method throws exception when process fails.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::process_payment_method
+	 * @return void
+	 */
+	public function test_process_payment_method_throws_exception_when_process_fails() : void {
+		// Mock SettingsService.
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
+			->once()
+			->with( 'tokenization' )
+			->andReturn( true );
+
+		// Mock WebhookData.
+		$data = Mockery::mock( WebhookData::class );
+		$data->shouldReceive( 'get_log_data' )
+			->once()
+			->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with( 'Payment method saving failed. Test error message.', 'error', [] );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Test error message.' );
+		$this->get_private_method_value(
+			'process_payment_method',
+			'saving',
+			function() {
+				throw new Exception( 'Test error message.' );
+			},
+			$data
+		);
 	}
 }
