@@ -1227,4 +1227,157 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectExceptionMessage( 'No valid order ID in incoming data.' );
 		$this->service->save_payment_method_from_order( $webhook );
 	}
+
+	/**
+	 * Test update_payment_method success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_payment_method
+	 * @return void
+	 */
+	public function test_update_payment_method_success() : void {
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( true );
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
+
+		// Mock Card.
+		$card = Mockery::mock( Card::class );
+		$card->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$card->shouldReceive( 'get_customer_id' )->once()->andReturn( 'customer_456' );
+		$card->shouldReceive( 'get_card_data' )->once()->andReturn( $this->get_test_card_data( 'valid' ) );
+		$card->shouldReceive( 'is_active' )->once()->andReturn( true );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_card' )
+			->once()
+			->with( 'token_123' )
+			->andReturn( $card );
+
+		// Mock WC_Customer.
+		$customer = Mockery::mock( 'WC_Customer' );
+		$customer->shouldReceive( 'get_id' )->times( 3 )->andReturn( 456 );
+
+		// Mock CustomerService.
+		$this->get_customer_service()
+			->shouldReceive( 'get_customer_from_customer_id' )
+			->once()
+			->with( 'customer_456' )
+			->andReturn( $customer );
+
+		// Mock WC_Payment_Token_CC.
+		$token = $this->mock_wc_payment_token();
+		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
+		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
+		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
+		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
+		$token->shouldReceive( 'validate' )->once()->andReturn( true );
+		$token->shouldReceive( 'get_token' )->once()->andReturn( 'token_123' );
+		$token->shouldReceive( 'save' )->once();
+
+		// Mock WC_Payment_Tokens.
+		$this->mock_wc_payment_tokens_get_tokens(
+			[
+				'user_id'    => 456,
+				'gateway_id' => 'acfw',
+			],
+			[ $token ]
+		);
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->times( 3 )
+			->withArgs(
+				function( $message ) {
+					return in_array(
+						$message,
+						[
+							'Payment method found successfully from incoming webhook data.',
+							'User found successfully from incoming webhook data. User ID: 456.',
+							'Payment method updated successfully. User ID: 456.',
+						],
+						true
+					);
+				}
+			);
+
+		// Test the method.
+		$this->service->update_payment_method( $webhook );
+	}
+
+	/**
+	 * Test update_payment_method throws exception when token not found.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_payment_method
+	 * @return void
+	 */
+	public function test_update_payment_method_throws_exception_when_token_not_found() : void {
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( true );
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
+
+		// Mock Card.
+		$card = Mockery::mock( Card::class );
+		$card->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$card->shouldReceive( 'get_customer_id' )->once()->andReturn( 'customer_456' );
+		$card->shouldReceive( 'is_active' )->once()->andReturn( true );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_card' )
+			->once()
+			->with( 'token_123' )
+			->andReturn( $card );
+
+		// Mock WC_Customer.
+		$customer = Mockery::mock( 'WC_Customer' );
+		$customer->shouldReceive( 'get_id' )->twice()->andReturn( 456 );
+
+		// Mock CustomerService.
+		$this->get_customer_service()
+			->shouldReceive( 'get_customer_from_customer_id' )
+			->once()
+			->with( 'customer_456' )
+			->andReturn( $customer );
+
+		// Mock WC_Payment_Tokens.
+		$this->mock_wc_payment_tokens_get_tokens(
+			[
+				'user_id'    => 456,
+				'gateway_id' => 'acfw',
+			],
+			[]
+		);
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->times( 3 )
+			->withArgs(
+				function( $message ) {
+					return in_array(
+						$message,
+						[
+							'Payment method found successfully from incoming webhook data.',
+							'User found successfully from incoming webhook data. User ID: 456.',
+							'Payment method updating failed. Token not found.',
+						],
+						true
+					);
+				}
+			);
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Token not found.' );
+		$this->service->update_payment_method( $webhook );
+	}
 }
