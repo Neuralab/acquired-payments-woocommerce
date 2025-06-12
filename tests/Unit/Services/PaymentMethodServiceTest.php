@@ -15,6 +15,7 @@ use AcquiredComForWooCommerce\Services\PaymentMethodService;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\ScheduleServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
+use AcquiredComForWooCommerce\Api\Response\Card;
 use Mockery;
 use Mockery\MockInterface;
 use Exception;
@@ -625,5 +626,87 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Failed to validate token.' );
 		$this->get_private_method_value( 'update_token', $token, $this->get_test_card_data( 'expired' ) );
+	}
+
+	/**
+	 * Test get_card.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_card
+	 * @return void
+	 */
+	public function test_get_card() : void {
+		// Mock Card.
+		$card = Mockery::mock( Card::class );
+		$card->shouldReceive( 'is_active' )
+			->once()
+			->andReturn( true );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_card' )
+			->once()
+			->with( 'token_123' )
+			->andReturn( $card );
+
+		// Test the method.
+		$this->assertInstanceOf( Card::class, $this->get_private_method_value( 'get_card', 'token_123' ) );
+	}
+
+	/**
+	 * Test get_card throws exception when request fails.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_card
+	 * @return void
+	 */
+	public function test_get_card_throws_exception_when_request_fails() : void {
+		// Mock Card.
+		$card = Mockery::mock( Card::class );
+		$card->shouldReceive( 'is_active' )
+			->once()
+			->andReturn( false );
+		$card->shouldReceive( 'request_is_error' )
+			->once()
+			->andReturn( true );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_card' )
+			->once()
+			->with( 'token_123' )
+			->andReturn( $card );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Card retrieval failed.' );
+		$this->get_private_method_value( 'get_card', 'token_123' );
+	}
+
+	/**
+	 * Test get_card throws exception when card is not active.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_card
+	 * @return void
+	 */
+	public function test_get_card_throws_exception_when_card_not_active() : void {
+		// Mock Card.
+		$card = Mockery::mock( Card::class );
+		$card->shouldReceive( 'is_active' )
+			->once()
+			->andReturn( false );
+		$card->shouldReceive( 'request_is_error' )
+			->once()
+			->andReturn( false );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_card' )
+			->once()
+			->with( 'token_123' )
+			->andReturn( $card );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Card is not active.' );
+		$this->get_private_method_value( 'get_card', 'token_123' );
 	}
 }
