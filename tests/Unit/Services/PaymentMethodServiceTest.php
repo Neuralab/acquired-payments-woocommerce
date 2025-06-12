@@ -997,21 +997,13 @@ class PaymentMethodServiceTest extends TestCase {
 	public function test_schedule_save_payment_method_success() : void {
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )
-			->once()
-			->andReturn( '456-add_payment_method_key' );
-		$webhook->shouldReceive( 'get_incoming_data' )
-			->once()
-			->andReturn( [ 'test_data' ] );
-		$webhook->shouldReceive( 'get_log_data' )
-			->once()
-			->andReturn( [] );
+		$webhook->shouldReceive( 'get_order_id' )->once()->andReturn( '456-add_payment_method_key' );
+		$webhook->shouldReceive( 'get_incoming_data' )->once()->andReturn( [ 'test_data' ] );
+		$webhook->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 
 		// Mock WC_Customer.
 		$customer = Mockery::mock( 'overload:WC_Customer' );
-		$customer->shouldReceive( 'get_id' )
-			->once()
-			->andReturn( 456 );
+		$customer->shouldReceive( 'get_id' )->once()->andReturn( 456 );
 
 		// Mock ScheduleService.
 		$this->get_schedule_service()
@@ -1048,12 +1040,8 @@ class PaymentMethodServiceTest extends TestCase {
 	public function test_schedule_save_payment_method_throws_exception_when_fails() : void {
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )
-			->once()
-			->andReturn( 'invalid_order_id' );
-		$webhook->shouldReceive( 'get_log_data' )
-			->once()
-			->andReturn( [] );
+		$webhook->shouldReceive( 'get_order_id' )->once()->andReturn( 'invalid_order_id' );
+		$webhook->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -1083,38 +1071,20 @@ class PaymentMethodServiceTest extends TestCase {
 
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )
-			->once()
-			->andReturn( '456-add_payment_method_key' );
-		$webhook->shouldReceive( 'get_card_id' )
-			->once()
-			->andReturn( 'token_123' );
-		$webhook->shouldReceive( 'get_type' )
-			->times( 3 )
-			->andReturn( 'webhook' );
-		$webhook->shouldReceive( 'get_log_data' )
-			->times( 3 )
-			->andReturn( [] );
+		$webhook->shouldReceive( 'get_order_id' )->once()->andReturn( '456-add_payment_method_key' );
+		$webhook->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$webhook->shouldReceive( 'get_type' )->times( 3 )->andReturn( 'webhook' );
+		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
 
 		// Mock WC_Customer.
 		$customer = Mockery::mock( 'overload:WC_Customer' );
-		$customer->shouldReceive( 'get_id' )
-			->times( 4 )
-			->andReturn( 456 );
+		$customer->shouldReceive( 'get_id' )->times( 4 )->andReturn( 456 );
 
 		// Mock Card.
 		$card = Mockery::mock( Card::class );
-		$card->shouldReceive( 'get_card_id' )
-			->once()
-			->andReturn( 'token_123' );
-		$card->shouldReceive( 'get_card_data' )
-			->once()
-			->andReturn(
-				$this->get_test_card_data( 'valid' )
-			);
-		$card->shouldReceive( 'is_active' )
-			->once()
-			->andReturn( true );
+		$card->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$card->shouldReceive( 'get_card_data' )->once()->andReturn( $this->get_test_card_data( 'valid' ) );
+		$card->shouldReceive( 'is_active' )->once()->andReturn( true );
 
 		// Mock ApiClient.
 		$this->get_api_client()
@@ -1169,15 +1139,9 @@ class PaymentMethodServiceTest extends TestCase {
 
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )
-			->once()
-			->andReturn( '789-wc_order_key' );
-		$webhook->shouldReceive( 'get_card_id' )
-			->once()
-			->andReturn( 'token_123' );
-		$webhook->shouldReceive( 'get_log_data' )
-			->times( 3 )
-			->andReturn( [] );
+		$webhook->shouldReceive( 'get_order_id' )->once()->andReturn( '789-wc_order_key' );
+		$webhook->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
 
 		// Mock WC_Order.
 
@@ -1188,24 +1152,13 @@ class PaymentMethodServiceTest extends TestCase {
 		$order->shouldReceive( 'add_payment_token' )->once();
 		$order->shouldReceive( 'save' )->once();
 
-		Functions\expect( 'wc_get_order' )
-			->once()
-			->with( '789' )
-			->andReturn( $order );
+		Functions\expect( 'wc_get_order' )->once()->with( '789' )->andReturn( $order );
 
 		// Mock Card.
 		$card = Mockery::mock( Card::class );
-		$card->shouldReceive( 'get_card_id' )
-			->once()
-			->andReturn( 'token_123' );
-		$card->shouldReceive( 'get_card_data' )
-			->once()
-			->andReturn(
-				$this->get_test_card_data( 'valid' )
-			);
-		$card->shouldReceive( 'is_active' )
-			->once()
-			->andReturn( true );
+		$card->shouldReceive( 'get_card_id' )->once()->andReturn( 'token_123' );
+		$card->shouldReceive( 'get_card_data' )->once()->andReturn( $this->get_test_card_data( 'valid' ) );
+		$card->shouldReceive( 'is_active' )->once()->andReturn( true );
 
 		// Mock ApiClient.
 		$this->get_api_client()
@@ -1260,12 +1213,8 @@ class PaymentMethodServiceTest extends TestCase {
 
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )
-			->once()
-			->andReturn( 'invalid_order' );
-		$webhook->shouldReceive( 'get_log_data' )
-			->once()
-			->andReturn( [] );
+		$webhook->shouldReceive( 'get_order_id' )->once()->andReturn( 'invalid_order' );
+		$webhook->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
