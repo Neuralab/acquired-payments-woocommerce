@@ -73,6 +73,20 @@ class PaymentMethodServiceTest extends TestCase {
 	}
 
 	/**
+	 * Mock tokenization setting.
+	 *
+	 * @param bool $setting
+	 * @return void
+	 */
+	private function mock_tokenization_setting( bool $setting ) : void {
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
+			->once()
+			->with( 'tokenization' )
+			->andReturn( $setting );
+	}
+
+	/**
 	 * Mock WC_Payment_Token_CC.
 	 *
 	 * @return MockInterface&\WC_Payment_Token_CC
@@ -879,12 +893,8 @@ class PaymentMethodServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_payment_method_success() : void {
-		// Mock SettingsService.
-		$this->get_settings_service()
-			->shouldReceive( 'is_enabled' )
-			->once()
-			->with( 'tokenization' )
-			->andReturn( true );
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( true );
 
 		// Mock WebhookData.
 		$data = Mockery::mock( WebhookData::class );
@@ -916,12 +926,8 @@ class PaymentMethodServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_payment_method_throws_exception_when_tokenization_disabled() : void {
-		// Mock SettingsService.
-		$this->get_settings_service()
-			->shouldReceive( 'is_enabled' )
-			->once()
-			->with( 'tokenization' )
-			->andReturn( false );
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( false );
 
 		// Mock WebhookData.
 		$data = Mockery::mock( WebhookData::class );
@@ -953,12 +959,8 @@ class PaymentMethodServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_payment_method_throws_exception_when_process_fails() : void {
-		// Mock SettingsService.
-		$this->get_settings_service()
-			->shouldReceive( 'is_enabled' )
-			->once()
-			->with( 'tokenization' )
-			->andReturn( true );
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( true );
 
 		// Mock WebhookData.
 		$data = Mockery::mock( WebhookData::class );
@@ -1075,12 +1077,8 @@ class PaymentMethodServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_save_payment_method_from_customer_success() : void {
-		// Mock SettingsService.
-		$this->get_settings_service()
-			->shouldReceive( 'is_enabled' )
-			->once()
-			->with( 'tokenization' )
-			->andReturn( true );
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( true );
 
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
@@ -1165,12 +1163,8 @@ class PaymentMethodServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_save_payment_method_from_customer_throws_exception_when_tokenization_disabled() : void {
-		// Mock SettingsService.
-		$this->get_settings_service()
-			->shouldReceive( 'is_enabled' )
-			->once()
-			->with( 'tokenization' )
-			->andReturn( false );
+		// Mock tokenization setting.
+		$this->mock_tokenization_setting( false );
 
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
