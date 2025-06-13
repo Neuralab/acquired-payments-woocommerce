@@ -23,7 +23,6 @@ use Exception;
  * CustomerServiceTest class.
  *
  * @runTestsInSeparateProcesses
- * @bootstrap tests/bootstrap.php
  * @covers \AcquiredComForWooCommerce\Services\CustomerService
  */
 class CustomerServiceTest extends TestCase {
