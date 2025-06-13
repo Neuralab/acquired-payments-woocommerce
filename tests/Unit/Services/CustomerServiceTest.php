@@ -22,7 +22,6 @@ use Exception;
 /**
  * CustomerServiceTest class.
  *
- * @runTestsInSeparateProcesses
  * @covers \AcquiredComForWooCommerce\Services\CustomerService
  */
 class CustomerServiceTest extends TestCase {
@@ -178,6 +177,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test create_customer_instance success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers AcquiredComForWooCommerce\Services\CustomerService::create_customer_instance
 	 * @return void
 	 */
@@ -190,6 +190,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test create_customer_instance failure.
 	 *
+	 * @runInSeparateProcess
 	 * @covers AcquiredComForWooCommerce\Services\CustomerService::create_customer_instance
 	 * @return void
 	 */
@@ -839,6 +840,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test create_or_update_customer_for_checkout with exception.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::create_or_update_customer_for_checkout
 	 * @return void
 	 */
@@ -870,6 +872,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test create_or_update_customer_for_checkout with create success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::create_or_update_customer_for_checkout
 	 * @return void
 	 */
@@ -946,6 +949,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test create_or_update_customer_for_checkout with update success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::create_or_update_customer_for_checkout
 	 * @return void
 	 */
@@ -1119,6 +1123,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_customer_data_for_checkout returns customer ID when update succeeds.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_customer_data_for_checkout
 	 * @return void
 	 */
@@ -1187,6 +1192,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_customer_data_for_checkout returns guest data when update fails.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_customer_data_for_checkout
 	 * @return void
 	 */
@@ -1388,6 +1394,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_or_create_customer_for_new_payment_method failure.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_or_create_customer_for_new_payment_method
 	 * @return void
 	 */
@@ -1416,6 +1423,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_or_create_customer_for_new_payment_method success with existing customer.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_or_create_customer_for_new_payment_method
 	 * @return void
 	 */
@@ -1444,6 +1452,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_or_create_customer_for_new_payment_method success with new customer.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_or_create_customer_for_new_payment_method
 	 * @return void
 	 */
@@ -1506,6 +1515,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_customer_data_for_new_payment_method returns customer ID.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_customer_data_for_new_payment_method
 	 * @return void
 	 */
@@ -1536,6 +1546,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_customer_data_for_new_payment_method returns empty array on failure.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_customer_data_for_new_payment_method
 	 * @return void
 	 */
@@ -1566,6 +1577,7 @@ class CustomerServiceTest extends TestCase {
 	/**
 	 * Test get_customer_from_customer_id success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\CustomerService::get_customer_from_customer_id
 	 * @return void
 	 */

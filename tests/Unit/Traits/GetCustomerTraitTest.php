@@ -14,7 +14,6 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerConstructorMock;
 /**
  * Test GetCustomer trait.
  *
- * @runTestsInSeparateProcesses
  * @covers \AcquiredComForWooCommerce\Traits\GetCustomer
  */
 class GetCustomerTraitTest extends TraitTestCase {
@@ -26,6 +25,7 @@ class GetCustomerTraitTest extends TraitTestCase {
 	/**
 	 * Get the test class instance.
 	 *
+	 * @runInSeparateProcess
 	 * @return object
 	 */
 	protected function get_test_class() : object {
@@ -35,6 +35,7 @@ class GetCustomerTraitTest extends TraitTestCase {
 	/**
 	 * Test get WC customer with invalid ID.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Traits\GetCustomer::get_wc_customer
 	 */
 	public function test_get_wc_customer_with_invalid_id() : void {
@@ -47,6 +48,7 @@ class GetCustomerTraitTest extends TraitTestCase {
 	/**
 	 * Test get WC customer with valid ID.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Traits\GetCustomer::get_wc_customer
 	 */
 	public function test_get_wc_customer_with_valid_id() : void {

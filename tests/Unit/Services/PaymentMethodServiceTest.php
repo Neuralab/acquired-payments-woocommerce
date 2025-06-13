@@ -27,7 +27,6 @@ use stdClass;
 /**
  * PaymentMethodServiceTest class.
  *
- * @runTestsInSeparateProcesses
  * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService
  */
 class PaymentMethodServiceTest extends TestCase {
@@ -228,6 +227,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test create_token_instance returns correct instance.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token_instance
 	 * @return void
 	 */
@@ -242,6 +242,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_token returns token when valid.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token
 	 * @return void
 	 */
@@ -264,6 +265,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_token returns null when token not found.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token
 	 * @return void
 	 */
@@ -278,6 +280,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_token returns null when gateway ID doesn't match.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token
 	 * @return void
 	 */
@@ -300,6 +303,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_user_tokens success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_user_tokens
 	 * @return void
 	 */
@@ -326,6 +330,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_user_tokens returns empty array when no tokens.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_user_tokens
 	 * @return void
 	 */
@@ -348,6 +353,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_token_by_user_and_card_id returns token when found.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
 	 * @return void
 	 */
@@ -374,6 +380,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_token_by_user_and_card_id throws exception when token id is not found.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
 	 * @return void
 	 */
@@ -402,6 +409,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test get_token_by_user_and_card_id throws exception when no tokens exist.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
 	 * @return void
 	 */
@@ -424,6 +432,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test payment_token_exists returns true when token exists.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::payment_token_exists
 	 * @return void
 	 */
@@ -450,6 +459,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test payment_token_exists returns false when token doesn't exist.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::payment_token_exists
 	 * @return void
 	 */
@@ -470,6 +480,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test set_token_card_data sets card data correctly.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::set_token_card_data
 	 * @return void
 	 */
@@ -515,6 +526,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test create_token success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
 	 * @return void
 	 */
@@ -541,6 +553,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test create_token success with order.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
 	 * @return void
 	 */
@@ -578,6 +591,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test create_token throws exception on validation failure.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
 	 * @return void
 	 */
@@ -606,6 +620,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_token success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_token
 	 * @return void
 	 */
@@ -626,6 +641,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_token throws exception on validation failure.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_token
 	 * @return void
 	 */
@@ -812,6 +828,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test deactivate_card success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::deactivate_card
 	 * @return void
 	 */
@@ -851,6 +868,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test deactivate_card failure.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::deactivate_card
 	 * @return void
 	 */
@@ -991,6 +1009,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test schedule_save_payment_method success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::schedule_save_payment_method
 	 * @return void
 	 */
@@ -1062,6 +1081,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test save_payment_method_from_customer success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_customer
 	 * @return void
 	 */
@@ -1130,6 +1150,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test save_payment_method_from_order success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_order
 	 * @return void
 	 */
@@ -1231,6 +1252,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_payment_method success.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_payment_method
 	 * @return void
 	 */
@@ -1312,6 +1334,7 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_payment_method throws exception when token not found.
 	 *
+	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_payment_method
 	 * @return void
 	 */
