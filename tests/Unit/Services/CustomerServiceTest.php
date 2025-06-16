@@ -172,7 +172,7 @@ class CustomerServiceTest extends TestCase {
 	public function test_constructor() : void {
 		$this->assertSame( $this->get_api_client(), $this->get_private_property_value( 'api_client' ) );
 		$this->assertSame( $this->get_logger_service(), $this->get_private_property_value( 'logger_service' ) );
-		$this->assertEquals( $this->get_customer_factory(), $this->get_private_property_value( 'customer_factory' ) );
+		$this->assertSame( $this->get_customer_factory(), $this->get_private_property_value( 'customer_factory' ) );
 	}
 
 	/**
