@@ -9,7 +9,7 @@ namespace AcquiredComForWooCommerce\Tests\Unit\Traits;
 
 use AcquiredComForWooCommerce\Tests\Framework\TraitTestCase;
 use AcquiredComForWooCommerce\Tests\Framework\TestClasses\PaymentLinkTraitTest as TestClass;
-use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerConstructorMock;
+use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerFactoryMock;
 use Brain\Monkey\Functions;
 use Exception;
 use Mockery;
@@ -20,11 +20,6 @@ use Mockery;
  * @covers \AcquiredComForWooCommerce\Traits\PaymentLink
  */
 class PaymentLinkTraitTest extends TraitTestCase {
-	/**
-	 * Traits
-	 */
-	use CustomerConstructorMock;
-
 	/**
 	 * Get the test class instance.
 	 *
@@ -188,12 +183,17 @@ class PaymentLinkTraitTest extends TraitTestCase {
 	/**
 	 * Test get WC customer from incoming data with non-existent customer.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Traits\PaymentLink::get_wc_customer_from_incoming_data
 	 * @return void
 	 */
 	public function test_get_wc_customer_from_incoming_data_with_non_existent_customer() : void {
-		$this->mock_wc_customer_constructor( 456, 'Failed to find customer. Customer ID: 456.' );
+		// Mock CustomerFactory.
+		$this->test_class->get_customer_factory()
+			->shouldReceive( 'get_wc_customer' )
+			->once()
+			->with( 456 )
+			->andThrow( new Exception( 'Failed to find customer. Customer ID: 456.' ) );
+
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Failed to find customer. Customer ID: 456.' );
 		$this->get_private_method_value( 'get_wc_customer_from_incoming_data', '456-add_payment_method_key' );
@@ -202,16 +202,22 @@ class PaymentLinkTraitTest extends TraitTestCase {
 	/**
 	 * Test get WC customer from incoming data with valid customer.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Traits\PaymentLink::get_wc_customer_from_incoming_data
 	 * @return void
 	 */
 	public function test_get_wc_customer_from_incoming_data_with_valid_customer() : void {
-		// Mock WC_Customer constructor.
-		$customer = $this->mock_wc_customer_constructor( 456 );
+		// Mock WC_Customer.
+		$customer = Mockery::mock( 'WC_Customer' );
+		$customer->shouldReceive( 'get_id' )->once()->andReturn( 456 );
 
-		// Test the response.
-		$customer->allows( 'get_id' )->andReturn( 456 );
+		// Mock CustomerFactory.
+		$this->test_class->get_customer_factory()
+			->shouldReceive( 'get_wc_customer' )
+			->once()
+			->with( 456 )
+			->andReturn( $customer );
+
+		// Test the method.
 		$result = $this->get_private_method_value( 'get_wc_customer_from_incoming_data', '456-add_payment_method_key' );
 		$this->assertInstanceOf( 'WC_Customer', $result );
 		$this->assertEquals( 456, $result->get_id() );

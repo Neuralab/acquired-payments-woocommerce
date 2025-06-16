@@ -23,14 +23,12 @@ use AcquiredComForWooCommerce\Observers\PaymentMethodObserver;
 use AcquiredComForWooCommerce\Observers\SettingsObserver;
 use AcquiredComForWooCommerce\Services\AdminService;
 use AcquiredComForWooCommerce\Services\ScheduleService;
+use AcquiredComForWooCommerce\Services\TokenService;
 use AcquiredComForWooCommerce\WooCommerce\PaymentGateway;
 use AcquiredComForWooCommerce\WooCommerce\PaymentMethod;
 use DI\ContainerBuilder;
 use function DI\autowire;
 use \Automattic\WooCommerce\Utilities\LoggingUtil;
-use WC_Customer;
-use WC_Payment_Token_CC;
-use WC_Payment_Tokens;
 
 defined( 'ABSPATH' ) || exit; // Exit if accessed directly.
 
@@ -66,13 +64,7 @@ $builder->addDefinitions(
 				$container->get( SettingsService::class )->config['dir_url']
 			);
 		},
-		CustomerService::class      => function( $container ) {
-			return new CustomerService(
-				$container->get( ApiClient::class ),
-				$container->get( LoggerService::class ),
-				WC_Customer::class
-			);
-		},
+		CustomerService::class      => autowire(),
 		IncomingDataHandler::class  => function( $container ) {
 			return new IncomingDataHandler( $container->get( LoggerService::class ), $container->get( SettingsService::class )->get_app_key() );
 		},
@@ -93,22 +85,15 @@ $builder->addDefinitions(
 		OrderService::class         => autowire(),
 		PaymentGateway::class       => autowire(),
 		PaymentMethod::class        => autowire(),
-		PaymentMethodService::class => function( $container ) {
-			return new PaymentMethodService(
-				$container->get( ApiClient::class ),
-				$container->get( CustomerService::class ),
-				$container->get( LoggerService::class ),
-				$container->get( ScheduleService::class ),
-				$container->get( SettingsService::class ),
-				WC_Payment_Token_CC::class,
-				WC_Payment_Tokens::class
-			);
-		},
+		PaymentMethodService::class => autowire(),
 		ScheduleService::class      => function( $container ) {
 			return new ScheduleService( $container->get( SettingsService::class )->config['plugin_id'] );
 		},
 		SettingsService::class      => function( $container ) {
 			return new SettingsService( $container->get( 'config' ) );
+		},
+		TokenService::class         => function( $container ) {
+			return new TokenService( $container->get( SettingsService::class )->config['plugin_id'] );
 		},
 	]
 );

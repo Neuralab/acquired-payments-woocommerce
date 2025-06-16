@@ -12,6 +12,7 @@ use AcquiredComForWooCommerce\Tests\Framework\Traits\ApiClientMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\LoggerServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\Reflection;
 use AcquiredComForWooCommerce\Services\OrderService;
+use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerFactoryMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\PaymentMethodServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\ScheduleServiceMock;
@@ -33,6 +34,7 @@ class OrderServiceTest extends TestCase {
 	use PaymentMethodServiceMock;
 	use ScheduleServiceMock;
 	use SettingsServiceMock;
+	use CustomerFactoryMock;
 
 	/**
 	 * OrderService class.
@@ -55,6 +57,7 @@ class OrderServiceTest extends TestCase {
 		$this->mock_payment_method_service();
 		$this->mock_schedule_service();
 		$this->mock_settings_service();
+		$this->mock_customer_factory();
 
 		$this->service = new OrderService(
 			$this->get_api_client(),
@@ -63,6 +66,7 @@ class OrderServiceTest extends TestCase {
 			$this->get_payment_method_service(),
 			$this->get_schedule_service(),
 			$this->get_settings_service(),
+			$this->get_customer_factory()
 		);
 
 		$this->initialize_reflection( $this->service );
@@ -81,5 +85,6 @@ class OrderServiceTest extends TestCase {
 		$this->assertSame( $this->get_payment_method_service(), $this->get_private_property_value( 'payment_method_service' ) );
 		$this->assertSame( $this->get_schedule_service(), $this->get_private_property_value( 'schedule_service' ) );
 		$this->assertSame( $this->get_settings_service(), $this->get_private_property_value( 'settings_service' ) );
+		$this->assertSame( $this->get_customer_factory(), $this->get_private_property_value( 'customer_factory' ) );
 	}
 }

@@ -11,6 +11,8 @@ use AcquiredComForWooCommerce\Api\ApiClient;
 use AcquiredComForWooCommerce\Api\IncomingData\RedirectData;
 use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
 use AcquiredComForWooCommerce\Api\Response\Card;
+use AcquiredComForWooCommerce\Factories\CustomerFactory;
+use AcquiredComForWooCommerce\Factories\TokenFactory;
 use AcquiredComForWooCommerce\Traits\PaymentLink;
 use stdClass;
 use Exception;
@@ -37,8 +39,9 @@ class PaymentMethodService {
 	 * @param LoggerService $logger_service
 	 * @param ScheduleService $schedule_service
 	 * @param SettingsService $settings_service
-	 * @param string $payment_token_class
-	 * @param string $payment_tokens_class
+	 * @param TokenService $token_service
+	 * @param CustomerFactory $customer_factory
+	 * @param TokenFactory $token_factory
 	 */
 	public function __construct(
 		private ApiClient $api_client,
@@ -46,8 +49,9 @@ class PaymentMethodService {
 		private LoggerService $logger_service,
 		private ScheduleService $schedule_service,
 		private SettingsService $settings_service,
-		private string $payment_token_class,
-		private string $payment_tokens_class
+		private TokenService $token_service,
+		private CustomerFactory $customer_factory,
+		private TokenFactory $token_factory,
 	) {}
 
 	/**
@@ -79,80 +83,6 @@ class PaymentMethodService {
 	}
 
 	/**
-	 * Create token instance.
-	 *
-	 * @return WC_Payment_Token_CC
-	 */
-	private function create_token_instance() : WC_Payment_Token_CC {
-		return new ( $this->payment_token_class );
-	}
-
-	/**
-	 * Get token.
-	 *
-	 * @param int $token_id
-	 * @return WC_Payment_Token_CC|null
-	 */
-	private function get_token( int $token_id ) : ?WC_Payment_Token_CC {
-		$token = ( $this->payment_tokens_class )::get( $token_id );
-
-		if ( ! $token || $token->get_gateway_id() !== $this->settings_service->config['plugin_id'] ) {
-			return null;
-		}
-
-		return $token;
-	}
-
-	/**
-	 * Get user tokens.
-	 *
-	 * @param int $user_id
-	 * @return WC_Payment_Token_CC[]|array<empty>
-	 */
-	private function get_user_tokens( int $user_id ) : array {
-		return ( $this->payment_tokens_class )::get_tokens(
-			[
-				'user_id'    => $user_id,
-				'gateway_id' => $this->settings_service->config['plugin_id'],
-			]
-		);
-	}
-
-	/**
-	 * Get token by card ID.
-	 *
-	 * @param int $user_id
-	 * @param string $card_id
-	 * @return WC_Payment_Token_CC
-	 * @throws Exception
-	 */
-	private function get_token_by_user_and_card_id( int $user_id, string $card_id ) : WC_Payment_Token_CC {
-		foreach ( $this->get_user_tokens( $user_id ) as $token ) {
-			if ( $token->get_token() === $card_id ) {
-				return $token;
-			}
-		}
-
-		throw new Exception( 'Token not found.' );
-	}
-
-	/**
-	 * Check if payment token exists.
-	 *
-	 * @param int $user_id
-	 * @param string $card_id
-	 * @return bool
-	 */
-	private function payment_token_exists( int $user_id, string $card_id ) : bool {
-		try {
-			$this->get_token_by_user_and_card_id( $user_id, $card_id );
-			return true;
-		} catch ( Exception $exception ) {
-			return false;
-		}
-	}
-
-	/**
 	 * Set token card data.
 	 *
 	 * @param WC_Payment_Token_CC $token
@@ -177,7 +107,7 @@ class PaymentMethodService {
 	 * @throws Exception
 	 */
 	private function create_token( string $card_id, stdClass $card_data, int $user_id, WC_Order|null $order = null ) : void {
-		$token = $this->create_token_instance();
+		$token = $this->token_factory->get_wc_payment_token();
 
 		$token->set_token( $card_id );
 		$this->set_token_card_data( $token, $card_data );
@@ -400,7 +330,7 @@ class PaymentMethodService {
 				$customer = $this->customer_service->get_customer_from_customer_id( $card->get_customer_id() );
 				$log( sprintf( 'User found successfully from incoming webhook data. User ID: %s.', $customer->get_id() ) );
 
-				$token = $this->get_token_by_user_and_card_id( $customer->get_id(), $card->get_card_id() );
+				$token = $this->token_service->get_token_by_user_and_card_id( $customer->get_id(), $card->get_card_id() );
 				$this->update_token( $token, $card->get_card_data() );
 				$log( sprintf( 'Payment method updated successfully. User ID: %s.', $customer->get_id() ) );
 
@@ -423,7 +353,7 @@ class PaymentMethodService {
 			$this->logger_service->log( sprintf( 'Customer found successfully from scheduled webhook data. User ID: %s.', $customer->get_id() ), 'debug', $data->get_log_data() );
 
 			// Since this action can be performed from a redirect and a scheduled webhook we need to check if the payment token was already added. We do this by checking if the payment token already exists.
-			if ( $this->payment_token_exists( $customer->get_id(), $data->get_card_id() ) ) {
+			if ( $this->token_service->payment_token_exists( $customer->get_id(), $data->get_card_id() ) ) {
 				$this->logger_service->log( sprintf( 'Skipping payment method saving. Payment method already saved from redirect data. User ID: %s.', $customer->get_id() ), 'debug', $data->get_log_data() );
 				return;
 			}
@@ -455,7 +385,7 @@ class PaymentMethodService {
 			return null;
 		}
 
-		$token = $this->get_token( $token_id );
+		$token = $this->token_service->get_token( $token_id );
 
 		if ( ! $token || $token->get_user_id() !== $order->get_user_id() ) {
 			$this->logger_service->log( sprintf( 'Payment method retrieval failed. User token invalid. Order ID: %s.', $order->get_id() ), 'error' );
@@ -540,7 +470,7 @@ class PaymentMethodService {
 			throw new Exception( $error );
 		}
 
-		$customer = $this->get_wc_customer( $user_id );
+		$customer = $this->customer_factory->get_wc_customer( $user_id );
 
 		if ( ! $customer ) {
 			$error = sprintf( 'Payment link creation failed. Customer not found. User ID: %s.', $user_id );
@@ -583,7 +513,7 @@ class PaymentMethodService {
 			$data->set_card_id( $card_id );
 
 			// Since this action can be performed from a redirect and a scheduled webhook we need to check if the payment token was already added. We do this by checking if the payment token already exists.
-			if ( ! $this->payment_token_exists( $customer->get_id(), $data->get_card_id() ) ) {
+			if ( ! $this->token_service->payment_token_exists( $customer->get_id(), $data->get_card_id() ) ) {
 				$this->save_payment_method_from_customer( $data );
 			}
 

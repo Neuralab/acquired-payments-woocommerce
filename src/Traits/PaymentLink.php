@@ -21,7 +21,6 @@ trait PaymentLink {
 	 * Traits.
 	 */
 	use Order;
-	use GetCustomer;
 
 	/**
 	 * Format order ID for payment link.
@@ -109,7 +108,7 @@ trait PaymentLink {
 			throw new Exception( 'No valid customer ID in incoming data.' );
 		}
 
-		$customer = $this->get_wc_customer( $customer_id );
+		$customer = $this->customer_factory->get_wc_customer( $customer_id );
 
 		if ( ! $customer ) {
 			throw new Exception( sprintf( 'Failed to find customer. Customer ID: %s.', $customer_id ) );

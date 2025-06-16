@@ -8,6 +8,7 @@ declare( strict_types = 1 );
 namespace AcquiredComForWooCommerce\Tests\Framework\Traits;
 
 use AcquiredComForWooCommerce\Api\ApiClient;
+use AcquiredComForWooCommerce\Factories\CustomerFactory;
 use AcquiredComForWooCommerce\Services\CustomerService;
 use AcquiredComForWooCommerce\Services\LoggerService;
 use Mockery;
@@ -35,7 +36,7 @@ trait CustomerServiceMock {
 			[
 				Mockery::mock( ApiClient::class ),
 				Mockery::mock( LoggerService::class ),
-				'WC_Customer',
+				Mockery::mock( CustomerFactory::class ),
 			]
 		);
 	}

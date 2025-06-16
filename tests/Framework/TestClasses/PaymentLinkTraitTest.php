@@ -9,6 +9,7 @@ namespace AcquiredComForWooCommerce\Tests\Framework\TestClasses;
 
 use AcquiredComForWooCommerce\Traits\PaymentLink;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
+use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerFactoryMock;
 
 /**
  * Implementation of PaymentLink trait for testing.
@@ -19,6 +20,7 @@ class PaymentLinkTraitTest {
 	 */
 	use PaymentLink;
 	use SettingsServiceMock;
+	use CustomerFactoryMock;
 
 	/**
 	 * Constructor.
@@ -27,5 +29,6 @@ class PaymentLinkTraitTest {
 	 */
 	public function __construct( private array $config ) {
 		$this->mock_settings_service();
+		$this->mock_customer_factory();
 	}
 }

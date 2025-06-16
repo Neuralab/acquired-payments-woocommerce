@@ -18,6 +18,7 @@ use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
 use Brain\Monkey\Actions;
 use Brain\Monkey\Functions;
 use Mockery;
+use Exception;
 
 /**
  * Test case for OrderObserver.
@@ -246,7 +247,7 @@ class OrderObserverTest extends TestCase {
 			->shouldReceive( 'get_webhook_data' )
 			->once()
 			->with( $webhook_data, $hash )
-			->andThrow( new \Exception( 'Failed to process webhook' ) );
+			->andThrow( new Exception( 'Failed to process webhook' ) );
 
 		// Mock logger service to log error.
 		$this->get_logger_service()

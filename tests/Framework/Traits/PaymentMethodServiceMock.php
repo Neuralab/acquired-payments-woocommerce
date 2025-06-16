@@ -13,6 +13,9 @@ use AcquiredComForWooCommerce\Services\LoggerService;
 use AcquiredComForWooCommerce\Services\CustomerService;
 use AcquiredComForWooCommerce\Services\ScheduleService;
 use AcquiredComForWooCommerce\Services\SettingsService;
+use AcquiredComForWooCommerce\Services\TokenService;
+use AcquiredComForWooCommerce\Factories\CustomerFactory;
+use AcquiredComForWooCommerce\Factories\TokenFactory;
 use Mockery;
 use Mockery\MockInterface;
 
@@ -41,8 +44,9 @@ trait PaymentMethodServiceMock {
 				Mockery::mock( LoggerService::class ),
 				Mockery::mock( ScheduleService::class ),
 				Mockery::mock( SettingsService::class ),
-				'WC_Payment_Token_CC',
-				'WC_Payment_Tokens',
+				Mockery::mock( TokenService::class ),
+				Mockery::mock( CustomerFactory::class ),
+				Mockery::mock( TokenFactory::class ),
 			]
 		);
 	}

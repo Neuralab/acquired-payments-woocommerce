@@ -21,7 +21,7 @@ trait Order {
 	 * @param int $order_id The order ID
 	 * @return WC_Order|null WooCommerce order object or null if invalid
 	 */
-	protected function get_wc_order( int $order_id ) : WC_Order|null {
+	protected function get_wc_order( int $order_id ) : ?WC_Order {
 		$order = wc_get_order( $order_id );
 
 		return $order instanceof WC_Order ? $order : null;

@@ -11,7 +11,10 @@ use AcquiredComForWooCommerce\Tests\Framework\TestCase;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\ApiClientMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\LoggerServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\Reflection;
+use AcquiredComForWooCommerce\Tests\Framework\Traits\TokenFactoryMock;
+use AcquiredComForWooCommerce\Tests\Framework\Traits\TokenServiceMock;
 use AcquiredComForWooCommerce\Services\PaymentMethodService;
+use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerFactoryMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\CustomerServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\ScheduleServiceMock;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\SettingsServiceMock;
@@ -39,6 +42,9 @@ class PaymentMethodServiceTest extends TestCase {
 	use LoggerServiceMock;
 	use ScheduleServiceMock;
 	use SettingsServiceMock;
+	use TokenServiceMock;
+	use CustomerFactoryMock;
+	use TokenFactoryMock;
 
 	/**
 	 * PaymentMethodService class.
@@ -87,68 +93,6 @@ class PaymentMethodServiceTest extends TestCase {
 	}
 
 	/**
-	 * Mock WC_Payment_Token_CC.
-	 *
-	 * @return MockInterface&\WC_Payment_Token_CC
-	 */
-	private function mock_wc_payment_token() : MockInterface {
-		// Mock WC_Payment_Token_CC.
-		$token = Mockery::mock( 'overload:WC_Payment_Token_CC' );
-		$token->shouldReceive( '__construct' )->once();
-
-		return $token;
-	}
-
-	/**
-	 * Mock WC_Payment_Tokens::get().
-	 *
-	 * @param int $token_id
-	 * @param MockInterface|null $return
-	 * @return MockInterface
-	 */
-	private function mock_wc_payment_tokens_get( int $token_id, MockInterface|null $return ) : MockInterface {
-		// Mock WC_Payment_Tokens.
-		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
-
-		$payment_tokens->shouldReceive( 'get' )
-			->once()
-			->with( $token_id )
-			->andReturn( $return );
-
-		return $payment_tokens;
-	}
-
-	/**
-	 * Mock WC_Payment_Tokens::get().
-	 *
-	 * @param array $args
-	 * @param array $return
-	 * @return MockInterface
-	 */
-	private function mock_wc_payment_tokens_get_tokens( array $args, array $return ) : MockInterface {
-		// Mock WC_Payment_Tokens.
-
-		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
-
-		$payment_tokens->shouldReceive( 'get_tokens' )
-			->once()
-			->with( $args )
-			->andReturn( $return );
-
-		return $payment_tokens;
-	}
-
-	/**
-	 * Mock WC_Payment_Token_CC instance creation.
-	 *
-	 * @param MockInterface $token Token mock to return
-	 * @return void
-	 */
-	private function mock_wc_payment_token_instance( MockInterface $token ) : void {
-		$this->set_private_property_value( 'payment_token_class', get_class( $token ) );
-	}
-
-	/**
 	 * Set up the test case.
 	 *
 	 * @return void
@@ -161,6 +105,9 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->mock_customer_service();
 		$this->mock_schedule_service();
 		$this->mock_settings_service();
+		$this->mock_token_service();
+		$this->mock_customer_factory();
+		$this->mock_token_factory();
 
 		$this->service = new PaymentMethodService(
 			$this->get_api_client(),
@@ -168,8 +115,9 @@ class PaymentMethodServiceTest extends TestCase {
 			$this->get_logger_service(),
 			$this->get_schedule_service(),
 			$this->get_settings_service(),
-			'WC_Payment_Token_CC',
-			'WC_Payment_Tokens',
+			$this->get_token_service(),
+			$this->get_customer_factory(),
+			$this->get_token_factory(),
 		);
 
 		$this->initialize_reflection( $this->service );
@@ -187,8 +135,9 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->assertSame( $this->get_logger_service(), $this->get_private_property_value( 'logger_service' ) );
 		$this->assertSame( $this->get_schedule_service(), $this->get_private_property_value( 'schedule_service' ) );
 		$this->assertSame( $this->get_settings_service(), $this->get_private_property_value( 'settings_service' ) );
-		$this->assertEquals( 'WC_Payment_Token_CC', $this->get_private_property_value( 'payment_token_class' ) );
-		$this->assertEquals( 'WC_Payment_Tokens', $this->get_private_property_value( 'payment_tokens_class' ) );
+		$this->assertSame( $this->get_token_service(), $this->get_private_property_value( 'token_service' ) );
+		$this->assertSame( $this->get_customer_factory(), $this->get_private_property_value( 'customer_factory' ) );
+		$this->assertSame( $this->get_token_factory(), $this->get_private_property_value( 'token_factory' ) );
 	}
 
 	/**
@@ -225,269 +174,15 @@ class PaymentMethodServiceTest extends TestCase {
 	}
 
 	/**
-	 * Test create_token_instance returns correct instance.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token_instance
-	 * @return void
-	 */
-	public function test_create_token_instance() : void {
-		// Mock WC_Payment_Token_CC.
-		$this->mock_wc_payment_token();
-
-		// Test the method.
-		$this->assertInstanceOf( 'WC_Payment_Token_CC', $this->get_private_method_value( 'create_token_instance' ) );
-	}
-
-	/**
-	 * Test get_token returns token when valid.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token
-	 * @return void
-	 */
-	public function test_get_token_success() : void {
-		// Mock WC_Payment_Token_CC.
-
-		$token = $this->mock_wc_payment_token();
-
-		$token->shouldReceive( 'get_gateway_id' )
-			->once()
-			->andReturn( 'acfw' );
-
-		// Mock WC_Payment_Tokens::get().
-		$this->mock_wc_payment_tokens_get( 123, $token );
-
-		// Test the method.
-		$this->assertInstanceOf( 'WC_Payment_Token_CC', $this->get_private_method_value( 'get_token', 123 ) );
-	}
-
-	/**
-	 * Test get_token returns null when token not found.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token
-	 * @return void
-	 */
-	public function test_get_token_token_not_found() : void {
-		// Mock WC_Payment_Token_CC.
-		$this->mock_wc_payment_tokens_get( 123, null );
-
-		// Test the method.
-		$this->assertNull( $this->get_private_method_value( 'get_token', 123 ) );
-	}
-
-	/**
-	 * Test get_token returns null when gateway ID doesn't match.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token
-	 * @return void
-	 */
-	public function test_get_token_token_not_our_payment_gateway() : void {
-		// Mock WC_Payment_Token_CC.
-
-		$token = $this->mock_wc_payment_token();
-
-		$token->shouldReceive( 'get_gateway_id' )
-			->once()
-			->andReturn( 'other_payment_method' );
-
-		// Mock WC_Payment_Tokens::get().
-		$this->mock_wc_payment_tokens_get( 123, $token );
-
-		// Test the method.
-		$this->assertNull( $this->get_private_method_value( 'get_token', 123 ) );
-	}
-
-	/**
-	 * Test get_user_tokens success.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_user_tokens
-	 * @return void
-	 */
-	public function test_get_user_tokens_success() : void {
-		// Mock WC_Payment_Token_CC
-		$token = $this->mock_wc_payment_token();
-
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[ $token ]
-		);
-
-		// Test the method.
-		$result = $this->get_private_method_value( 'get_user_tokens', 456 );
-		$this->assertIsArray( $result );
-		$this->assertCount( 1, $result );
-		$this->assertInstanceOf( 'WC_Payment_Token_CC', $result[0] );
-	}
-
-	/**
-	 * Test get_user_tokens returns empty array when no tokens.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_user_tokens
-	 * @return void
-	 */
-	public function test_get_user_tokens_returns_empty_array() : void {
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[]
-		);
-
-		// Test the method.
-		$result = $this->get_private_method_value( 'get_user_tokens', 456 );
-		$this->assertIsArray( $result );
-		$this->assertEmpty( $result );
-	}
-
-	/**
-	 * Test get_token_by_user_and_card_id returns token when found.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
-	 * @return void
-	 */
-	public function test_get_token_by_user_and_card_id_success() : void {
-		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
-		$token->shouldReceive( 'get_token' )
-			->once()
-			->andReturn( 'token_123' );
-
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[ $token ]
-		);
-
-		// Test the method.
-		$this->assertInstanceOf( 'WC_Payment_Token_CC', $this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'token_123' ) );
-	}
-
-	/**
-	 * Test get_token_by_user_and_card_id throws exception when token id is not found.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
-	 * @return void
-	 */
-	public function test_get_token_by_user_and_token_id_not_found() : void {
-		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
-		$token->shouldReceive( 'get_token' )
-			->once()
-			->andReturn( 'token_456' );
-
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[ $token ]
-		);
-
-		// Test the method.
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'Token not found.' );
-		$this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'token_123' );
-	}
-
-	/**
-	 * Test get_token_by_user_and_card_id throws exception when no tokens exist.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::get_token_by_user_and_card_id
-	 * @return void
-	 */
-	public function test_get_token_by_user_and_card_id_no_tokens() : void {
-		// Mock WC_Payment_Token_CC.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[]
-		);
-
-		// Test the method.
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'Token not found.' );
-		$this->get_private_method_value( 'get_token_by_user_and_card_id', 456, 'token_123' );
-	}
-
-	/**
-	 * Test payment_token_exists returns true when token exists.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::payment_token_exists
-	 * @return void
-	 */
-	public function test_payment_token_exists_returns_true() : void {
-		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
-		$token->shouldReceive( 'get_token' )
-			->once()
-			->andReturn( 'token_123' );
-
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[ $token ]
-		);
-
-		// Test the method.
-		$this->assertTrue( $this->get_private_method_value( 'payment_token_exists', 456, 'token_123' ) );
-	}
-
-	/**
-	 * Test payment_token_exists returns false when token doesn't exist.
-	 *
-	 * @runInSeparateProcess
-	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::payment_token_exists
-	 * @return void
-	 */
-	public function test_payment_token_exists_returns_false() : void {
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[]
-		);
-
-		// Test the method.
-		$this->assertFalse( $this->get_private_method_value( 'payment_token_exists', 456, 'token_123' ) );
-	}
-
-	/**
 	 * Test set_token_card_data sets card data correctly.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::set_token_card_data
 	 * @return void
 	 */
 	public function test_set_token_card_data() : void {
 		// Mock WC_Payment_Token_CC.
 
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 
 		$token->shouldReceive( 'set_card_type' )
 			->once();
@@ -526,13 +221,12 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test create_token success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
 	 * @return void
 	 */
 	public function test_create_token_success() : void {
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
 		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
@@ -543,8 +237,11 @@ class PaymentMethodServiceTest extends TestCase {
 		$token->shouldReceive( 'validate' )->once()->andReturn( true );
 		$token->shouldReceive( 'save' )->once();
 
-		// Mock create_token_instance.
-		$this->mock_wc_payment_token_instance( $token );
+		// Mock TokenFactory.
+		$this->get_token_factory()
+			->shouldReceive( 'get_wc_payment_token' )
+			->once()
+			->andReturn( $token );
 
 		// Test the method.
 		$this->get_private_method_value( 'create_token', 'token_123', $this->get_test_card_data( 'valid' ), 456 );
@@ -553,13 +250,12 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test create_token success with order.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
 	 * @return void
 	 */
 	public function test_create_token_success_with_order() : void {
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
 		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
@@ -581,8 +277,11 @@ class PaymentMethodServiceTest extends TestCase {
 			);
 		$order->shouldReceive( 'save' )->once();
 
-		// Mock create_token_instance.
-		$this->mock_wc_payment_token_instance( $token );
+		// Mock TokenFactory.
+		$this->get_token_factory()
+			->shouldReceive( 'get_wc_payment_token' )
+			->once()
+			->andReturn( $token );
 
 		// Test the method.
 		$this->get_private_method_value( 'create_token', 'token_123', $this->get_test_card_data( 'valid' ), 456, $order );
@@ -591,13 +290,12 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test create_token throws exception on validation failure.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::create_token
 	 * @return void
 	 */
 	public function test_create_token_throws_exception_on_validation_failure() : void {
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
 		$token->shouldReceive( 'set_last4' )->once()->with( '4567' );
@@ -608,8 +306,11 @@ class PaymentMethodServiceTest extends TestCase {
 		$token->shouldReceive( 'validate' )->once()->andReturn( false );
 		$token->shouldNotReceive( 'save' );
 
-		// Mock create_token_instance.
-		$this->mock_wc_payment_token_instance( $token );
+		// Mock TokenFactory.
+		$this->get_token_factory()
+			->shouldReceive( 'get_wc_payment_token' )
+			->once()
+			->andReturn( $token );
 
 		// Test the method.
 		$this->expectException( Exception::class );
@@ -620,13 +321,12 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_token success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_token
 	 * @return void
 	 */
 	public function test_update_token_success() : void {
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
 		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
 		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
@@ -641,13 +341,12 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_token throws exception on validation failure.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_token
 	 * @return void
 	 */
 	public function test_update_token_throws_exception_on_validation_failure() : void {
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
 		$token->shouldReceive( 'set_last4' )->once()->with( '4567' );
 		$token->shouldReceive( 'set_expiry_month' )->once()->with( '12' );
@@ -828,13 +527,12 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test deactivate_card success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::deactivate_card
 	 * @return void
 	 */
 	public function test_deactivate_card_success() : void {
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'get_token' )
 			->once()
 			->andReturn( 'token_123' );
@@ -868,13 +566,12 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test deactivate_card failure.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::deactivate_card
 	 * @return void
 	 */
 	public function test_deactivate_card_failure() : void {
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 			$token->shouldReceive( 'get_token' )
 			->once()
 			->andReturn( 'token_123' );
@@ -1009,7 +706,6 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test schedule_save_payment_method success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::schedule_save_payment_method
 	 * @return void
 	 */
@@ -1021,8 +717,15 @@ class PaymentMethodServiceTest extends TestCase {
 		$webhook->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 
 		// Mock WC_Customer.
-		$customer = Mockery::mock( 'overload:WC_Customer' );
+		$customer = Mockery::mock( 'WC_Customer' );
 		$customer->shouldReceive( 'get_id' )->once()->andReturn( 456 );
+
+		// Mock CustomerFactory.
+		$this->get_customer_factory()
+			->shouldReceive( 'get_wc_customer' )
+			->once()
+			->with( 456 )
+			->andReturn( $customer );
 
 		// Mock ScheduleService.
 		$this->get_schedule_service()
@@ -1081,7 +784,6 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test save_payment_method_from_customer success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_customer
 	 * @return void
 	 */
@@ -1097,8 +799,15 @@ class PaymentMethodServiceTest extends TestCase {
 		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
 
 		// Mock WC_Customer.
-		$customer = Mockery::mock( 'overload:WC_Customer' );
+		$customer = Mockery::mock( 'WC_Customer' );
 		$customer->shouldReceive( 'get_id' )->times( 4 )->andReturn( 456 );
+
+		// Mock CustomerFactory.
+		$this->get_customer_factory()
+			->shouldReceive( 'get_wc_customer' )
+			->once()
+			->with( 456 )
+			->andReturn( $customer );
 
 		// Mock Card.
 		$card = Mockery::mock( Card::class );
@@ -1114,7 +823,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->andReturn( $card );
 
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_gateway_id' )->once();
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
@@ -1124,6 +833,12 @@ class PaymentMethodServiceTest extends TestCase {
 		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
 		$token->shouldReceive( 'validate' )->once()->andReturn( true );
 		$token->shouldReceive( 'save' )->once();
+
+		// Mock TokenFactory.
+		$this->get_token_factory()
+			->shouldReceive( 'get_wc_payment_token' )
+			->once()
+			->andReturn( $token );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -1150,7 +865,6 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test save_payment_method_from_order success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::save_payment_method_from_order
 	 * @return void
 	 */
@@ -1189,7 +903,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->andReturn( $card );
 
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_gateway_id' )->once();
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
@@ -1199,6 +913,12 @@ class PaymentMethodServiceTest extends TestCase {
 		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
 		$token->shouldReceive( 'validate' )->once()->andReturn( true );
 		$token->shouldReceive( 'save' )->once();
+
+		// Mock TokenFactory.
+		$this->get_token_factory()
+			->shouldReceive( 'get_wc_payment_token' )
+			->once()
+			->andReturn( $token );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -1252,7 +972,6 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_payment_method success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_payment_method
 	 * @return void
 	 */
@@ -1291,23 +1010,20 @@ class PaymentMethodServiceTest extends TestCase {
 			->andReturn( $customer );
 
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
 		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
 		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
 		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
 		$token->shouldReceive( 'validate' )->once()->andReturn( true );
-		$token->shouldReceive( 'get_token' )->once()->andReturn( 'token_123' );
 		$token->shouldReceive( 'save' )->once();
 
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[ $token ]
-		);
+		// Mock TokenService.
+		$this->get_token_service()
+			->shouldReceive( 'get_token_by_user_and_card_id' )
+			->once()
+			->with( 456, 'token_123' )
+			->andReturn( $token );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -1334,7 +1050,6 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test update_payment_method throws exception when token not found.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::update_payment_method
 	 * @return void
 	 */
@@ -1371,14 +1086,12 @@ class PaymentMethodServiceTest extends TestCase {
 			->with( 'customer_456' )
 			->andReturn( $customer );
 
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[]
-		);
+		// Mock TokenService.
+		$this->get_token_service()
+			->shouldReceive( 'get_token_by_user_and_card_id' )
+			->once()
+			->with( 456, 'token_123' )
+			->andThrow( new Exception( 'Token not found.' ) );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -1407,7 +1120,6 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test process_scheduled_save_payment_method success.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::process_scheduled_save_payment_method
 	 * @return void
 	 */
@@ -1423,17 +1135,22 @@ class PaymentMethodServiceTest extends TestCase {
 		$webhook->shouldReceive( 'get_log_data' )->times( 4 )->andReturn( [] );
 
 		// Mock WC_Customer.
-		$customer = Mockery::mock( 'overload:WC_Customer' );
-		$customer->shouldReceive( 'get_id' )->andReturn( 456 );
+		$customer = Mockery::mock( 'WC_Customer' );
+		$customer->shouldReceive( 'get_id' )->times( 6 )->andReturn( 456 );
 
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[]
-		);
+		// Mock CustomerFactory.
+		$this->get_customer_factory()
+			->shouldReceive( 'get_wc_customer' )
+			->twice()
+			->with( 456 )
+			->andReturn( $customer );
+
+		// Mock TokenService.
+		$this->get_token_service()
+			->shouldReceive( 'payment_token_exists' )
+			->once()
+			->with( 456, 'token_123' )
+			->andReturn( false );
 
 		// Mock Card.
 		$card = Mockery::mock( Card::class );
@@ -1449,7 +1166,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->andReturn( $card );
 
 		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 		$token->shouldReceive( 'set_token' )->once()->with( 'token_123' );
 		$token->shouldReceive( 'set_gateway_id' )->once();
 		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
@@ -1459,6 +1176,12 @@ class PaymentMethodServiceTest extends TestCase {
 		$token->shouldReceive( 'set_user_id' )->once()->with( 456 );
 		$token->shouldReceive( 'validate' )->once()->andReturn( true );
 		$token->shouldReceive( 'save' )->once();
+
+		// Mock TokenFactory.
+		$this->get_token_factory()
+			->shouldReceive( 'get_wc_payment_token' )
+			->once()
+			->andReturn( $token );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -1486,7 +1209,6 @@ class PaymentMethodServiceTest extends TestCase {
 	/**
 	 * Test process_scheduled_save_payment_method when token exists.
 	 *
-	 * @runInSeparateProcess
 	 * @covers \AcquiredComForWooCommerce\Services\PaymentMethodService::process_scheduled_save_payment_method
 	 * @return void
 	 */
@@ -1498,27 +1220,22 @@ class PaymentMethodServiceTest extends TestCase {
 		$webhook->shouldReceive( 'get_log_data' )->times( 2 )->andReturn( [] );
 
 		// Mock WC_Customer.
-		$customer = Mockery::mock( 'overload:WC_Customer' );
+		$customer = Mockery::mock( 'WC_Customer' );
 		$customer->shouldReceive( 'get_id' )->times( 3 )->andReturn( 456 );
 
-		// Mock WC_Payment_Token_CC.
-		$token = $this->mock_wc_payment_token();
-		$token->shouldReceive( 'set_card_type' )->once()->with( 'visa' );
-		$token->shouldReceive( 'set_last4' )->once()->with( '1234' );
-		$token->shouldReceive( 'set_expiry_month' )->once()->with( '06' );
-		$token->shouldReceive( 'set_expiry_year' )->once()->with( '2025' );
-		$token->shouldReceive( 'validate' )->once()->andReturn( true );
-		$token->shouldReceive( 'get_token' )->once()->andReturn( 'token_123' );
-		$token->shouldReceive( 'save' )->once();
+		// Mock CustomerFactory.
+		$this->get_customer_factory()
+			->shouldReceive( 'get_wc_customer' )
+			->once()
+			->with( 456 )
+			->andReturn( $customer );
 
-		// Mock WC_Payment_Tokens.
-		$this->mock_wc_payment_tokens_get_tokens(
-			[
-				'user_id'    => 456,
-				'gateway_id' => 'acfw',
-			],
-			[ $token ]
-		);
+		// Mock TokenService.
+		$this->get_token_service()
+			->shouldReceive( 'payment_token_exists' )
+			->once()
+			->with( 456, 'token_123' )
+			->andReturn( true );
 
 		// Mock LoggerService.
 		$this->get_logger_service()

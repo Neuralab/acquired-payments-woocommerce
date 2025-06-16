@@ -11,6 +11,7 @@ use AcquiredComForWooCommerce\Api\ApiClient;
 use AcquiredComForWooCommerce\Api\IncomingData\RedirectData;
 use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
 use AcquiredComForWooCommerce\Api\Response\Transaction;
+use AcquiredComForWooCommerce\Factories\CustomerFactory;
 use AcquiredComForWooCommerce\Traits\PaymentLink;
 use Exception;
 use DateTime;
@@ -36,6 +37,7 @@ class OrderService {
 	 * @param LoggerService $logger_service
 	 * @param PaymentMethodService $payment_method_service
 	 * @param SettingsService $settings_service
+	 * @param CustomerFactory $customer_factory
 	 */
 	public function __construct(
 		private ApiClient $api_client,
@@ -43,7 +45,8 @@ class OrderService {
 		private LoggerService $logger_service,
 		private PaymentMethodService $payment_method_service,
 		private ScheduleService $schedule_service,
-		private SettingsService $settings_service
+		private SettingsService $settings_service,
+		private CustomerFactory $customer_factory,
 	) {}
 
 	/**

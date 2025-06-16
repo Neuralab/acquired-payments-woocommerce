@@ -8,6 +8,7 @@ declare( strict_types = 1 );
 namespace AcquiredComForWooCommerce\Services;
 
 use AcquiredComForWooCommerce\Api\ApiClient;
+use AcquiredComForWooCommerce\Factories\CustomerFactory;
 use Exception;
 use WC_Customer;
 use WC_Order;
@@ -23,24 +24,13 @@ class CustomerService {
 	 *
 	 * @param ApiClient $api_client
 	 * @param LoggerService $logger_service
-	 * @param string $customer_class
+	 * @param CustomerFactory $customer_factory
 	 */
 	public function __construct(
 		private ApiClient $api_client,
 		private LoggerService $logger_service,
-		private string $customer_class
+		private CustomerFactory $customer_factory
 	) {}
-
-	/**
-	 * Create customer instance.
-	 *
-	 * @param int $user_id
-	 * @return WC_Customer
-	 * @throws Exception
-	 */
-	private function create_customer_instance( int $user_id ) : WC_Customer {
-		return new ( $this->customer_class )( $user_id );
-	}
 
 	/**
 	 * Format address basic data.
@@ -306,7 +296,7 @@ class CustomerService {
 	 */
 	private function create_or_update_customer_for_checkout( WC_Order $order ) : ?WC_Customer {
 		try {
-			$customer      = $this->create_customer_instance( $order->get_user_id() );
+			$customer      = $this->customer_factory->get_wc_customer( $order->get_user_id() );
 			$customer_data = $this->get_customer_address_data_from_wc_order( $order );
 		} catch ( Exception $exception ) {
 			$this->logger_service->log( sprintf( 'Creating/updating customer data for checkout failed. Order ID: %s. Error: "%s".', $order->get_id(), $exception->getMessage() ), 'error' );
@@ -386,7 +376,7 @@ class CustomerService {
 	 */
 	private function get_or_create_customer_for_new_payment_method( int $user_id ) : ?WC_Customer {
 		try {
-			$customer      = $this->create_customer_instance( $user_id );
+			$customer      = $this->customer_factory->get_wc_customer( $user_id );
 			$customer_data = $this->get_customer_address_data( $customer );
 		} catch ( Exception $exception ) {
 			$this->logger_service->log( sprintf( 'Getting customer for new payment method failed. User ID: %s. Error: "%s".', $user_id, $exception->getMessage() ), 'error' );
@@ -435,6 +425,6 @@ class CustomerService {
 			throw new Exception( 'User not found.' );
 		}
 
-		return $this->create_customer_instance( (int) $user_data[0] );
+		return $this->customer_factory->get_wc_customer( (int) $user_data[0] );
 	}
 }

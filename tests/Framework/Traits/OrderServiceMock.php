@@ -14,6 +14,7 @@ use AcquiredComForWooCommerce\Services\CustomerService;
 use AcquiredComForWooCommerce\Services\PaymentMethodService;
 use AcquiredComForWooCommerce\Services\ScheduleService;
 use AcquiredComForWooCommerce\Services\SettingsService;
+use AcquiredComForWooCommerce\Factories\CustomerFactory;
 use Mockery;
 use Mockery\MockInterface;
 
@@ -43,6 +44,7 @@ trait OrderServiceMock {
 				Mockery::mock( PaymentMethodService::class ),
 				Mockery::mock( ScheduleService::class ),
 				Mockery::mock( SettingsService::class ),
+				Mockery::mock( CustomerFactory::class ),
 			]
 		);
 	}
