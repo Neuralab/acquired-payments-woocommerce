@@ -11,6 +11,7 @@ use AcquiredComForWooCommerce\Tests\Framework\TestCase;
 use AcquiredComForWooCommerce\Tests\Framework\Traits\Reflection;
 use AcquiredComForWooCommerce\Services\TokenService;
 use Mockery;
+use Exception;
 
 /**
  * TokenServiceTest class.
@@ -48,10 +49,7 @@ class TokenServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_constructor() : void {
-		$this->assertEquals(
-			'acfw',
-			$this->get_private_property_value( 'gateway_id' )
-		);
+		$this->assertEquals( 'acfw', $this->get_private_property_value( 'gateway_id' ) );
 	}
 
 	/**
@@ -132,7 +130,7 @@ class TokenServiceTest extends TestCase {
 		// Mock WC_Payment_Token_CC.
 		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 
-		// Mock WC_Payment_Tokens::get_tokens().
+		// Mock WC_Payment_Tokens.
 		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
 		$payment_tokens->shouldReceive( 'get_tokens' )
 			->once()
@@ -158,7 +156,7 @@ class TokenServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_get_user_tokens_returns_empty_array() : void {
-		// Mock WC_Payment_Tokens::get_tokens().
+		// Mock WC_Payment_Tokens.
 		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
 		$payment_tokens->shouldReceive( 'get_tokens' )
 			->once()
@@ -174,5 +172,141 @@ class TokenServiceTest extends TestCase {
 		$result = $this->service->get_user_tokens( 456 );
 		$this->assertIsArray( $result );
 		$this->assertEmpty( $result );
+	}
+
+	/**
+	 * Test get_token_by_user_and_card_id returns token when found.
+	 *
+	 * @runInSeparateProcess
+	 * @covers \AcquiredComForWooCommerce\Services\TokenService::get_token_by_user_and_card_id
+	 * @return void
+	 */
+	public function test_get_token_by_user_and_card_id_success() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
+		$token->shouldReceive( 'get_token' )->once()->andReturn( 'token_123' );
+
+		// Mock WC_Payment_Tokens.
+		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
+		$payment_tokens->shouldReceive( 'get_tokens' )
+			->once()
+			->with(
+				[
+					'user_id'    => 456,
+					'gateway_id' => 'acfw',
+				]
+			)
+			->andReturn( [ $token ] );
+
+		// Test the method.
+		$this->assertInstanceOf( 'WC_Payment_Token_CC', $this->service->get_token_by_user_and_card_id( 456, 'token_123' ) );
+	}
+
+	/**
+	 * Test get_token_by_user_and_card_id throws exception when token id is not found.
+	 *
+	 * @runInSeparateProcess
+	 * @covers \AcquiredComForWooCommerce\Services\TokenService::get_token_by_user_and_card_id
+	 * @return void
+	 */
+	public function test_get_token_by_user_and_token_id_not_found() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
+		$token->shouldReceive( 'get_token' )->once()->andReturn( 'token_456' );
+
+		// Mock WC_Payment_Tokens.
+		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
+		$payment_tokens->shouldReceive( 'get_tokens' )
+			->once()
+			->with(
+				[
+					'user_id'    => 456,
+					'gateway_id' => 'acfw',
+				]
+			)
+			->andReturn( [ $token ] );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Token not found.' );
+		$this->service->get_token_by_user_and_card_id( 456, 'token_123' );
+	}
+
+	/**
+	 * Test get_token_by_user_and_card_id throws exception when no tokens exist.
+	 *
+	 * @runInSeparateProcess
+	 * @covers \AcquiredComForWooCommerce\Services\TokenService::get_token_by_user_and_card_id
+	 * @return void
+	 */
+	public function test_get_token_by_user_and_card_id_no_tokens() : void {
+		// Mock WC_Payment_Tokens.
+		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
+		$payment_tokens->shouldReceive( 'get_tokens' )
+			->once()
+			->with(
+				[
+					'user_id'    => 456,
+					'gateway_id' => 'acfw',
+				]
+			)
+			->andReturn( [] );
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Token not found.' );
+		$this->service->get_token_by_user_and_card_id( 456, 'token_123' );
+	}
+
+	/**
+	 * Test payment_token_exists returns true when token exists.
+	 *
+	 * @runInSeparateProcess
+	 * @covers \AcquiredComForWooCommerce\Services\TokenService::payment_token_exists
+	 * @return void
+	 */
+	public function test_payment_token_exists_returns_true() : void {
+		// Mock WC_Payment_Token_CC.
+		$token = Mockery::mock( 'WC_Payment_Token_CC' );
+		$token->shouldReceive( 'get_token' )->once()->andReturn( 'token_123' );
+
+		// Mock WC_Payment_Tokens.
+		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
+		$payment_tokens->shouldReceive( 'get_tokens' )
+			->once()
+			->with(
+				[
+					'user_id'    => 456,
+					'gateway_id' => 'acfw',
+				]
+			)
+			->andReturn( [ $token ] );
+
+		// Test the method.
+		$this->assertTrue( $this->service->payment_token_exists( 456, 'token_123' ) );
+	}
+
+	/**
+	 * Test payment_token_exists returns false when token doesn't exist.
+	 *
+	 * @runInSeparateProcess
+	 * @covers \AcquiredComForWooCommerce\Services\TokenService::payment_token_exists
+	 * @return void
+	 */
+	public function test_payment_token_exists_returns_false() : void {
+		// Mock WC_Payment_Tokens.
+		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
+		$payment_tokens->shouldReceive( 'get_tokens' )
+			->once()
+			->with(
+				[
+					'user_id'    => 456,
+					'gateway_id' => 'acfw',
+				]
+			)
+			->andReturn( [] );
+
+		// Test the method.
+		$this->assertFalse( $this->service->payment_token_exists( 456, 'token_123' ) );
 	}
 }
