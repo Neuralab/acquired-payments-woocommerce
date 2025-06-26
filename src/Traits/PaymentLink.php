@@ -148,4 +148,74 @@ trait PaymentLink {
 	protected function get_pay_url( string $link_id ) : string {
 		return $this->settings_service->get_pay_url() . $link_id;
 	}
+
+	/**
+	 * Get payment link error message.
+	 *
+	 * @param array $invalid_parameters
+	 * @return string
+	 */
+	public function get_payment_link_error_message( array $invalid_parameters ) : string {
+		$message = __( 'Payment link creation failed.', 'acquired-com-for-woocommerce' );
+
+		if ( empty( $invalid_parameters ) ) {
+			return $message;
+		}
+
+		$error_messages = [
+			'customer.first_name'                => [
+				'customer.first_name validation failed' => __( 'The first name provided for the customer is invalid. Please ensure it\'s correctly formatted and does not include unsupported characters.', 'acquired-com-for-woocommerce' ),
+				'customer.first_name length must be less than or equal to 22' => __( 'The first name provided for the customer is invalid. Please ensure it\'s no longer than 22 characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.last_name'                 => [
+				'customer.last_name validation failed' => __( 'The last name provided for the customer is invalid. Please ensure it\'s correctly formatted and does not include unsupported characters.', 'acquired-com-for-woocommerce' ),
+				'customer.last_name length must be less than or equal to 22' => __( 'The last name provided for the customer is invalid. Please ensure it\'s correctly formatted and does not include unsupported characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.billing.address.city'      => [
+				'customer.billing.address.city length must be greater than or equal to 1 and less than or equal to 40' => __( 'The city field in the billing address must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.billing.address.line_1'    => [
+				'customer.billing.address.line_1 length must be less than or equal to 50' => __( 'The first line of the billing address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.billing.address.line_2'    => [
+				'customer.billing.address.line_2 length must be less than or equal to 50' => __( 'The second line of the billing address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.billing.address.postcode'  => [
+				'customer.billing.address.postcode length must be greater than or equal to 1 and less than or equal to 40' => __( 'The postcode must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
+				'Acceptable Characters: ^[a-zA-Z0-9,.-\'/_ ]*$' => __( 'The postcode in the billing address contains invalid characters. Please use only standard letters and numbers.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.shipping.address.city'     => [
+				'customer.shipping.address.city length must be greater than or equal to 1 and less than or equal to 40' => __( 'The city field in the shipping address must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.shipping.address.line_1'   => [
+				'customer.shipping.address.line_1 length must be less than or equal to 50' => __( 'The first line of the shipping address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.shipping.address.line_2'   => [
+				'customer.shipping.address.line_2 length must be less than or equal to 50' => __( 'The second line of the shipping address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+			],
+			'customer.shipping.address.postcode' => [
+				'customer.shipping.address.postcode length must be greater than or equal to 1 and less than or equal to 40' => __( 'The postcode must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
+				'Acceptable Characters: ^[a-zA-Z0-9,.-\'/_ ]*$' => __( 'The postcode in the shipping address contains invalid characters. Please use only standard letters and numbers.', 'acquired-com-for-woocommerce' ),
+			],
+		];
+
+		$errors = [];
+
+		foreach ( $invalid_parameters as $error ) :
+			$parameter = $error->parameter ?? '';
+			$reason    = $error->reason ?? '';
+
+			if ( isset( $error_messages[ $parameter ][ $reason ] ) ) {
+				$errors[] = $error_messages[ $parameter ][ $reason ];
+			}
+		endforeach;
+
+		if ( ! empty( $errors ) ) {
+			$message  = __( 'There was a problem with your details. Please check the information you entered and try again.', 'acquired-com-for-woocommerce' );
+			$message .= ' ' . __( 'Issues:', 'acquired-com-for-woocommerce' ) . ' ';
+			$message .= join( ' ', $errors );
+		}
+
+		return $message;
+	}
 }

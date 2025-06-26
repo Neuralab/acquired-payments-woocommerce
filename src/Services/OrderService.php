@@ -319,7 +319,7 @@ class OrderService {
 				$response->get_log_data()
 			);
 
-			throw new Exception( __( 'Payment link creation failed.', 'acquired-com-for-woocommerce' ) );
+			throw new Exception( $this->get_payment_link_error_message( $response->get_invalid_parameters() ) );
 		}
 	}
 

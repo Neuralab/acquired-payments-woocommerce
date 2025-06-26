@@ -140,6 +140,35 @@ class Response {
 	}
 
 	/**
+	 * Get invalid parameters.
+	 *
+	 * @return array
+	 */
+	public function get_invalid_parameters() : array {
+		return $this->invalid_parameters;
+	}
+
+	/**
+	 * Get invalid parameters for error message.
+	 *
+	 * @return array
+	 */
+	private function get_invalid_parameters_for_error_message() : array {
+		$invalid_parameters = $this->get_invalid_parameters();
+
+		if ( ! $invalid_parameters ) {
+			return [];
+		}
+
+		return array_map(
+			function( $parameter ) {
+				return sprintf( '%s - %s', $parameter->parameter, $parameter->reason );
+			},
+			$invalid_parameters
+		);
+	}
+
+	/**
 	 * Get error message formatted.
 	 *
 	 * @return string
@@ -152,12 +181,16 @@ class Response {
 		/* translators: %s is error title. */
 		$error_message = sprintf( __( 'Error message: "%s".', 'acquired-com-for-woocommerce' ), $this->get_error_message() );
 
-		if ( $with_invalid_params && ! empty( $this->invalid_parameters ) ) {
-			$error_message .= sprintf(
-				/* translators: %s is invalid parameters. */
-				__( ' Invalid parameters: "%s".', 'acquired-for-woocommerce' ),
-				join( ', ', $this->invalid_parameters )
-			);
+		if ( $with_invalid_params ) {
+			$invalid_parameters = $this->get_invalid_parameters_for_error_message();
+
+			if ( $invalid_parameters ) {
+				$error_message .= sprintf(
+					/* translators: %s is invalid parameters. */
+					__( ' Invalid parameters: "%s".', 'acquired-for-woocommerce' ),
+					join( ', ', $invalid_parameters )
+				);
+			}
 		}
 
 		return $error_message;
@@ -279,16 +312,9 @@ class Response {
 	private function handle_request_exception() : void {
 		$error_message = $this->get_body_field( 'error' ) ?? $this->get_reason_phrase();
 		$this->set_error_message( $error_message ?: 'Unknown error' );
-
 		$invalid_parameters = $this->get_body_field( 'invalid_parameters' );
-
 		if ( $invalid_parameters && is_array( $invalid_parameters ) ) {
-			$this->invalid_parameters = array_map(
-				function( $parameter ) {
-					return sprintf( '%s - %s', $parameter->parameter, $parameter->reason );
-				},
-				$invalid_parameters
-			);
+			$this->invalid_parameters = $this->get_body_field( 'invalid_parameters' );
 		}
 	}
 
