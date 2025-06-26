@@ -166,8 +166,8 @@ class ResponseTest extends ResponseTestCase {
 		$invalid_parameters_formatted = $reflection->get_private_property_value( 'invalid_parameters' );
 		$this->assertIsArray( $invalid_parameters_formatted );
 		$this->assertCount( 2, $invalid_parameters_formatted );
-		$this->assertEquals( 'amount - The amount must be a positive number.', $invalid_parameters_formatted[0] );
-		$this->assertEquals( 'currency - The currency code is invalid.', $invalid_parameters_formatted[1] );
+		$this->assertEquals( 'amount - The amount must be a positive number.', sprintf( '%s - %s', $invalid_parameters_formatted[0]->parameter, $invalid_parameters_formatted[0]->reason ) );
+		$this->assertEquals( 'currency - The currency code is invalid.', sprintf( '%s - %s', $invalid_parameters_formatted[1]->parameter, $invalid_parameters_formatted[1]->reason ) );
 
 		// Test the error message formatted.
 		$error_message = $result->get_error_message_formatted( true );
