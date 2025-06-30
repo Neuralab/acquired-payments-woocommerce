@@ -57,8 +57,62 @@ class PaymentGateway extends WC_Payment_Gateway {
 			$this->supports[] = 'tokenization';
 		}
 
+		add_action(
+			'woocommerce_after_checkout_validation',
+			function( $data, $errors ) {
+				error_log( 'woocommerce_after_checkout_validation' );
+				// error_log( print_r( $data, true ) );
+				$errors->add( 'validation', __( 'woocommerce_after_checkout_validation.', 'acquired-com-for-woocommerce' ) );
+			},
+			10,
+			2
+		);
+
+		add_action(
+    'woocommerce_rest_checkout_process_payment_with_context',
+    function ( $context, $result ) {
+
+
+
+        // $errors = [
+        //     'First name must be ≤ 40 characters.',
+        //     'Last name must be ≤ 40 characters.',
+        // ];
+				error_log( 'woocommerce_rest_checkout_process_payment_with_context' );
+				error_log( print_r( $context, true ) );
+
+        throw new \WC_REST_Exception(
+            'my_gateway_validation',          // error code
+            'woocommerce_rest_checkout_process_payment_with_context',         // one banner, multiple lines
+            400                               // HTTP status
+        );
+
+				$result->set_status( 'success' );
+				$result->set_redirect_url( 'https://example.com' );
+    },
+    10,
+   	2  // only $context – we don't touch $result
+);
+
 		$this->init_hooks();
 	}
+
+
+	/**
+	 * Validate frontend fields.
+	 *
+	 * Validate payment fields on the frontend.
+	 *
+	 * @return bool
+	 */
+	public function validate_fields() {
+		$order = wc_get_order( get_query_var( 'order-pay' ) );
+		error_log( 'validate_fields' );
+		error_log( print_r( $order->get_address( 'billing' ), true ) );
+		wc_add_notice( __( 'validate_fields', 'acquired-com-for-woocommerce' ), 'error' );
+		return false;
+	}
+
 
 	/**
 	 * Initialize payment gateway settings fields.
@@ -90,6 +144,24 @@ class PaymentGateway extends WC_Payment_Gateway {
 
 		add_filter( 'woocommerce_gateway_description', [ $this, 'show_staging_message' ], 10, 2 );
 		add_filter( 'woocommerce_order_fully_refunded_status', [ $this, 'set_order_fully_refunded_status' ], 10, 2 );
+
+		// add_action( 'woocommerce_after_checkout_validation',
+		// function( $data, $errors ) {
+		// 		$errors->add( 'acquired-com-setup', __( 'Yo.', 'acquired-com-for-woocommerce' ) );
+		// 	},
+		// 	10,
+		// 	2
+		// );
+
+		// add_action(
+		// 	'woocommerce_checkout_validate_order_before_payment',
+		// 	function ( $order, $errors ) {
+		// 		$errors->add( 'custom_error', 'This is a custom validation error.' );
+		// 		$errors->add( 'custom_error', 'This is 2nd custom validation error.' );
+		// 	},
+		// 	10,
+		// 	2
+		// );
 	}
 
 	/**
@@ -306,6 +378,7 @@ class PaymentGateway extends WC_Payment_Gateway {
 				'redirect' => $payment_link,
 			];
 		} catch ( Exception $exception ) {
+			wc_add_notice( $exception->getMessage(), 'error' );
 			return [
 				'result'   => 'failure',
 				'redirect' => wc_get_endpoint_url( 'payment-methods' ),
