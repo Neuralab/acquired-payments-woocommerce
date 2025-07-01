@@ -8,6 +8,7 @@ declare( strict_types = 1 );
 namespace AcquiredComForWooCommerce\WooCommerce;
 
 use AcquiredComForWooCommerce\Api\IncomingDataHandler;
+use AcquiredComForWooCommerce\Services\AddressValidationService;
 use AcquiredComForWooCommerce\Services\AdminService;
 use AcquiredComForWooCommerce\Services\LoggerService;
 use AcquiredComForWooCommerce\Services\OrderService;
@@ -35,6 +36,7 @@ class PaymentGateway extends WC_Payment_Gateway {
 	 */
 	public function __construct(
 		private IncomingDataHandler $incoming_data_handler,
+		private AddressValidationService $address_validation_service,
 		private AdminService $admin_service,
 		private LoggerService $logger_service,
 		private OrderService $order_service,
@@ -69,11 +71,21 @@ class PaymentGateway extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	public function validate_fields() {
-		$order = wc_get_order( get_query_var( 'order-pay' ) );
-		error_log( 'validate_fields' );
-		error_log( print_r( $order->get_address( 'billing' ), true ) );
-		wc_add_notice( __( 'validate_fields', 'acquired-com-for-woocommerce' ), 'error' );
-		return false;
+		$errors = $this->address_validation_service->validate_checkout_classic();
+
+		if ( $errors ) {
+			wc_add_notice( __( 'Please fix the errors below.', 'acquired-com-for-woocommerce' ), 'error' );
+
+			foreach ( $errors as $error_data ) :
+				foreach ( $error_data as $error_message ) :
+					wc_add_notice( $error_message, 'error' );
+				endforeach;
+			endforeach;
+
+			return false;
+		}
+
+		return true;
 	}
 
 
