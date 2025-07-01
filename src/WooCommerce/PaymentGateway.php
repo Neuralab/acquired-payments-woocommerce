@@ -57,43 +57,6 @@ class PaymentGateway extends WC_Payment_Gateway {
 			$this->supports[] = 'tokenization';
 		}
 
-		add_action(
-			'woocommerce_after_checkout_validation',
-			function( $data, $errors ) {
-				error_log( 'woocommerce_after_checkout_validation' );
-				// error_log( print_r( $data, true ) );
-				$errors->add( 'validation', __( 'woocommerce_after_checkout_validation.', 'acquired-com-for-woocommerce' ) );
-			},
-			10,
-			2
-		);
-
-		add_action(
-    'woocommerce_rest_checkout_process_payment_with_context',
-    function ( $context, $result ) {
-
-
-
-        // $errors = [
-        //     'First name must be ≤ 40 characters.',
-        //     'Last name must be ≤ 40 characters.',
-        // ];
-				error_log( 'woocommerce_rest_checkout_process_payment_with_context' );
-				error_log( print_r( $context, true ) );
-
-        throw new \WC_REST_Exception(
-            'my_gateway_validation',          // error code
-            'woocommerce_rest_checkout_process_payment_with_context',         // one banner, multiple lines
-            400                               // HTTP status
-        );
-
-				$result->set_status( 'success' );
-				$result->set_redirect_url( 'https://example.com' );
-    },
-    10,
-   	2  // only $context – we don't touch $result
-);
-
 		$this->init_hooks();
 	}
 
