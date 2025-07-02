@@ -278,7 +278,7 @@ class PaymentGateway extends WC_Payment_Gateway {
 			$order_id = absint( get_query_var( 'order-pay' ) );
 			$order    = $this->order_service->get_wc_order( $order_id );
 			if ( $this->order_service->is_acfw_payment_method( $order ) ) {
-				$errors = $this->address_validation_service->validate_checkout_classic_address_data( $order );
+				$errors = $this->address_validation_service->validate_order_address_data( $order );
 			}
 		} elseif ( is_wc_endpoint_url( 'add-payment-method' ) ) {
 			$errors = $this->address_validation_service->validate_customer_address_data( $this->customer_factory->get_wc_customer( get_current_user_id() ) );
