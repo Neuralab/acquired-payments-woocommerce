@@ -7,6 +7,7 @@ declare( strict_types = 1 );
 
 namespace AcquiredComForWooCommerce\Services;
 
+use WC_Customer;
 use WC_Order;
 
 defined( 'ABSPATH' ) || exit; // Exit if accessed directly.
@@ -21,58 +22,106 @@ class AddressValidationService {
 	 * @var array
 	 */
 	private array $validation_rules = [
-		'billing'  => [
-			'first_name' => [
-				[
-					'rule'   => 'max_length',
-					'length' => 35,
-				],
-				[ 'rule' => 'special_chars' ],
+		'billing_first_name'  => [
+			[
+				'rule'   => 'max_length',
+				'length' => 22,
 			],
-			'last_name'  => [
-				[
-					'rule'   => 'max_length',
-					'length' => 35,
-				],
-				[ 'rule' => 'special_chars' ],
-			],
-			'address'    => [
-				[
-					'rule'   => 'max_length',
-					'length' => 100,
-				],
-				[
-					'rule' => 'special_chars',
-				],
+			[
+				'rule' => 'name',
 			],
 		],
-		'shipping' => [
-			'first_name' => [
-				[
-					'rule'   => 'max_length',
-					'length' => 22,
-				],
-				[
-					'rule' => 'special_chars',
-				],
+		'billing_last_name'   => [
+			[
+				'rule'   => 'max_length',
+				'length' => 22,
 			],
-			'last_name'  => [
-				[
-					'rule'   => 'max_length',
-					'length' => 22,
-				],
-				[
-					'rule' => 'special_chars',
-				],
+			[
+				'rule' => 'name',
 			],
-			'address'    => [
-				[
-					'rule'   => 'max_length',
-					'length' => 50,
-				],
-				[
-					'rule' => 'special_chars',
-				],
+		],
+		'billing_address_1'   => [
+			[
+				'rule'   => 'max_length',
+				'length' => 50,
+			],
+			[
+				'rule' => 'address',
+			],
+		],
+		'billing_address_2'   => [
+			[
+				'rule'   => 'max_length',
+				'length' => 50,
+			],
+			[
+				'rule' => 'address',
+			],
+		],
+		'billing_city'        => [
+			[
+				'rule'   => 'max_length',
+				'length' => 40,
+			],
+			[
+				'rule' => 'address',
+			],
+		],
+		'billing_postcode'    => [
+			[
+				'rule'   => 'max_length',
+				'length' => 40,
+			],
+		],
+		'shipping_first_name' => [
+			[
+				'rule'   => 'max_length',
+				'length' => 22,
+			],
+			[
+				'rule' => 'name',
+			],
+		],
+		'shipping_last_name'  => [
+			[
+				'rule'   => 'max_length',
+				'length' => 22,
+			],
+			[
+				'rule' => 'name',
+			],
+		],
+		'shipping_address_1'  => [
+			[
+				'rule'   => 'max_length',
+				'length' => 50,
+			],
+			[
+				'rule' => 'address',
+			],
+		],
+		'shipping_address_2'  => [
+			[
+				'rule'   => 'max_length',
+				'length' => 50,
+			],
+			[
+				'rule' => 'address',
+			],
+		],
+		'shipping_city'       => [
+			[
+				'rule'   => 'max_length',
+				'length' => 40,
+			],
+			[
+				'rule' => 'address',
+			],
+		],
+		'shipping_postcode'   => [
+			[
+				'rule'   => 'max_length',
+				'length' => 40,
 			],
 		],
 	];
@@ -80,46 +129,81 @@ class AddressValidationService {
 	/**
 	 * Get error message for a specific field and rule.
 	 *
-	 * @param string $address_type
-	 * @param string $field_name
+	 * @param string $field_key
 	 * @param string $rule_name
 	 * @return string
 	 */
-	private function get_error_message( string $address_type, string $field_name, string $rule_name ) : string {
+	private function get_error_message( string $field_key, string $rule_name ) : string {
 		$messages = [
-			'billing'  => [
-				'first_name' => [
-					'max_length'    => __( 'Billing first name is too long', 'acquired-com-for-woocommerce' ),
-					'special_chars' => __( 'Billing first name contains invalid characters', 'acquired-com-for-woocommerce' ),
-				],
-				'last_name'  => [
-					'max_length'    => __( 'Billing last name is too long', 'acquired-com-for-woocommerce' ),
-					'special_chars' => __( 'Billing last name contains invalid characters', 'acquired-com-for-woocommerce' ),
-				],
+			'billing_first_name'  => [
+				'max_length' => __( 'The first name provided for the billing address is invalid. Please ensure it\'s no longer than 22 characters.', 'acquired-com-for-woocommerce' ),
+				'name'       => __( 'The first name provided for the billing address is invalid. Please ensure it\'s correctly formatted and does not include unsupported characters.', 'acquired-com-for-woocommerce' ),
 			],
-			'shipping' => [
-				'first_name' => [
-					'max_length'    => __( 'Shipping first name is too long', 'acquired-com-for-woocommerce' ),
-					'special_chars' => __( 'Shipping first name contains invalid characters', 'acquired-com-for-woocommerce' ),
-				],
-				'last_name'  => [
-					'max_length'    => __( 'Shipping last name is too long', 'acquired-com-for-woocommerce' ),
-					'special_chars' => __( 'Shipping last name contains invalid characters', 'acquired-com-for-woocommerce' ),
-				],
+			'billing_last_name'   => [
+				'max_length' => __( 'The last name provided for the billing address is invalid. Please ensure it\'s no longer than 22 characters.', 'acquired-com-for-woocommerce' ),
+				'name'       => __( 'The last name provided for the billing address is invalid. Please ensure it\'s correctly formatted and does not include unsupported characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'billing_address_1'   => [
+				'max_length' => __( 'The first line of the billing address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+				'address'    => __( 'The first line of the billing address contains invalid characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'billing_address_2'   => [
+				'max_length' => __( 'The second line of the billing address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+				'address'    => __( 'The second line of the billing address contains invalid characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'billing_city'        => [
+				'max_length' => __( 'The city field in the billing address must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
+				'address'    => __( 'The city field in the billing address contains invalid characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'billing_postcode'    => [
+				'max_length' => __( 'The postcode in the billing address must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
+			],
+			'shipping_first_name' => [
+				'max_length' => __( 'The first name provided for the shipping address is invalid. Please ensure it\'s no longer than 22 characters.', 'acquired-com-for-woocommerce' ),
+				'name'       => __( 'The first name provided for the shipping address is invalid. Please ensure it\'s correctly formatted and does not include unsupported characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'shipping_last_name'  => [
+				'max_length' => __( 'The last name provided for the shipping address is invalid. Please ensure it\'s no longer than 22 characters.', 'acquired-com-for-woocommerce' ),
+				'name'       => __( 'The last name provided for the shipping address is invalid. Please ensure it\'s correctly formatted and does not include unsupported characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'shipping_address_1'  => [
+				'max_length' => __( 'The first line of the shipping address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+				'address'    => __( 'The first line of the shipping address contains invalid characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'shipping_address_2'  => [
+				'max_length' => __( 'The second line of the shipping address must be between 1 and 50 characters long.', 'acquired-com-for-woocommerce' ),
+				'address'    => __( 'The second line of the shipping address contains invalid characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'shipping_city'       => [
+				'max_length' => __( 'The city field in the shipping address must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
+				'address'    => __( 'The city field in the shipping address contains invalid characters.', 'acquired-com-for-woocommerce' ),
+			],
+			'shipping_postcode'   => [
+				'max_length' => __( 'The postcode in the shipping address must be between 1 and 40 characters long.', 'acquired-com-for-woocommerce' ),
 			],
 		];
 
-		return $messages[ $address_type ][ $field_name ][ $rule_name ] ?? __( 'Invalid value', 'acquired-com-for-woocommerce' );
+		return $messages[ $field_key ][ $rule_name ] ?? __( 'Invalid value', 'acquired-com-for-woocommerce' );
 	}
 
 	/**
-	 * Validate text for special characters.
+	 * Validate name.
 	 *
 	 * @param string $value
 	 * @return bool
 	 */
-	private function validate_special_chars( string $value ) : bool {
-		return (bool) preg_match( '/^[a-zA-Z\.\- `\']*$/', $value );
+	private function validate_name( string $value ) : bool {
+		return (bool) preg_match( '/^[\p{L}\.\- `\']++$/u', $value );
+	}
+
+	/**
+	 * Validate address.
+	 *
+	 * @param string $value
+	 * @return bool
+	 */
+	private function validate_address( string $value ) : bool {
+		return (bool) preg_match( '/^[\p{L}\p{N}\.,\/\-\& ]++$/u', $value );
 	}
 
 	/**
@@ -134,43 +218,77 @@ class AddressValidationService {
 	}
 
 	/**
-	 * Validate address data.
+	 * Validate field.
 	 *
-	 * @param array  $data
-	 * @param string $address_type
-	 * @return array
+	 * @param string $field_key
+	 * @param string $value
+	 * @return array|null
 	 */
-	private function validate_address_data( array $data, string $address_type ) : array {
+	private function validate_field( string $field_key, string $value ) : ?array {
 		$errors = [];
 
-		foreach ( $data as $field => $value ) :
-			if ( ! isset( $this->validation_rules[ $address_type ][ $field ] ) ) {
+		foreach ( $this->validation_rules[ $field_key ] as $rule_config ) :
+			$is_valid = false;
+			$rule     = $rule_config['rule'];
+			$method   = sprintf( 'validate_%s', $rule );
+
+			if ( 'max_length' === $rule ) {
+				$is_valid = $this->{$method}( $value, $rule_config['length'] );
+			} else {
+				$is_valid = $this->{$method}( $value );
+			}
+
+			if ( ! $is_valid ) {
+				$errors[ $rule ] = $this->get_error_message( $field_key, $rule );
+			}
+		endforeach;
+
+		return ! empty( $errors ) ? $errors : null;
+	}
+
+	/**
+	 * Validate classic checkout address data.
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	public function validate_checkout_classic_address_data( $data ) : array {
+		$errors           = [];
+		$validation_rules = $this->validation_rules;
+
+		if ( empty( $data['ship_to_different_address'] ) ) {
+			$validation_rules = array_filter(
+				$validation_rules,
+				function ( $key ) {
+					return strpos( $key, 'shipping_' ) === false;
+				},
+				ARRAY_FILTER_USE_KEY
+			);
+		}
+
+		foreach ( $validation_rules as $field_key => $rules ) {
+			if ( empty( $data[ $field_key ] ) ) {
 				continue;
 			}
 
-			$rules        = $this->validation_rules[ $address_type ][ $field ];
-			$field_errors = [];
+			$field_errors = $this->validate_field( $field_key, $data[ $field_key ] );
 
-			foreach ( $rules as $rule_config ) :
-				$is_valid  = false;
-				$rule_name = $rule_config['rule'];
-				$method    = sprintf( 'validate_%s', $rule_name );
-
-				if ( 'max_length' === $rule_name ) {
-					$is_valid = $this->{$method}( $value, $rule_config['length'] );
-				} else {
-					$is_valid = $this->{$method}( $value );
-				}
-
-				if ( ! $is_valid ) {
-					$field_errors[ $rule_name ] = $this->get_error_message( $address_type, $field, $rule_name );
-				}
-			endforeach;
-
-			if ( ! empty( $field_errors ) ) {
-				$errors[ $field ] = $field_errors;
+			if ( $field_errors ) {
+				$errors[ $field_key ] = $field_errors;
 			}
-		endforeach;
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * Validate block checkout address data.
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	public function validate_checkout_block_address_data( array $data ) : array {
+		$errors = [];
 
 		return $errors;
 	}
@@ -182,35 +300,20 @@ class AddressValidationService {
 	 * @return array
 	 */
 	public function validate_order_address_data( WC_Order $order ) : array {
-		$errors = [
-			'billing' => $this->validate_address_data( $order->get_address( 'billing' ), 'billing' ),
-		];
-
-		if ( $order->has_shipping_address() ) {
-			$errors['shipping'] = $this->validate_address_data( $order->get_address( 'shipping' ), 'shipping' );
-		}
-
-		return array_filter( $errors );
-	}
-
-	public function validate_checkout_classic() : array {
-		$posted_data = $_POST;
-
 		$errors = [];
 
-		$fields = [
-			'billing'  => [
-				'first_name' => sanitize_text_field( wp_unslash( $posted_data['billing_first_name'] ?? '' ) ),
-				'last_name'  => sanitize_text_field( wp_unslash( $posted_data['billing_last_name'] ?? '' ) ),
-			],
-		];
+		return $errors;
+	}
 
-		$billing = array_filter( $fields['billing'] );
+	/**
+	 * Validate customer address data.
+	 *
+	 * @param WC_Customer $customer
+	 * @return array
+	 */
+	public function validate_customer_address_data( WC_Customer $customer ) : array {
+		$errors = [];
 
-		if ( $billing ) {
-			$errors = $this->validate_address_data( $billing, 'billing' );
-		}
-
-		return array_filter( $errors );
+		return $errors;
 	}
 }

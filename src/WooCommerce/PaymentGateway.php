@@ -14,9 +14,11 @@ use AcquiredComForWooCommerce\Services\LoggerService;
 use AcquiredComForWooCommerce\Services\OrderService;
 use AcquiredComForWooCommerce\Services\SettingsService;
 use AcquiredComForWooCommerce\Services\PaymentMethodService;
+use AcquiredComForWooCommerce\Factories\CustomerFactory;
 use Exception;
 use WC_Order;
 use WC_Payment_Gateway;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit; // Exit if accessed directly.
 
@@ -41,7 +43,8 @@ class PaymentGateway extends WC_Payment_Gateway {
 		private LoggerService $logger_service,
 		private OrderService $order_service,
 		private PaymentMethodService $payment_method_service,
-		private SettingsService $settings_service
+		private SettingsService $settings_service,
+		private CustomerFactory $customer_factory,
 	) {
 		$this->id                 = $this->settings_service->config['plugin_id'];
 		$this->method_title       = __( 'Acquired.com', 'acquired-com-for-woocommerce' );
@@ -61,33 +64,6 @@ class PaymentGateway extends WC_Payment_Gateway {
 
 		$this->init_hooks();
 	}
-
-
-	/**
-	 * Validate frontend fields.
-	 *
-	 * Validate payment fields on the frontend.
-	 *
-	 * @return bool
-	 */
-	public function validate_fields() {
-		$errors = $this->address_validation_service->validate_checkout_classic();
-
-		if ( $errors ) {
-			wc_add_notice( __( 'Please fix the errors below.', 'acquired-com-for-woocommerce' ), 'error' );
-
-			foreach ( $errors as $error_data ) :
-				foreach ( $error_data as $error_message ) :
-					wc_add_notice( $error_message, 'error' );
-				endforeach;
-			endforeach;
-
-			return false;
-		}
-
-		return true;
-	}
-
 
 	/**
 	 * Initialize payment gateway settings fields.
@@ -120,23 +96,7 @@ class PaymentGateway extends WC_Payment_Gateway {
 		add_filter( 'woocommerce_gateway_description', [ $this, 'show_staging_message' ], 10, 2 );
 		add_filter( 'woocommerce_order_fully_refunded_status', [ $this, 'set_order_fully_refunded_status' ], 10, 2 );
 
-		// add_action( 'woocommerce_after_checkout_validation',
-		// function( $data, $errors ) {
-		// 		$errors->add( 'acquired-com-setup', __( 'Yo.', 'acquired-com-for-woocommerce' ) );
-		// 	},
-		// 	10,
-		// 	2
-		// );
-
-		// add_action(
-		// 	'woocommerce_checkout_validate_order_before_payment',
-		// 	function ( $order, $errors ) {
-		// 		$errors->add( 'custom_error', 'This is a custom validation error.' );
-		// 		$errors->add( 'custom_error', 'This is 2nd custom validation error.' );
-		// 	},
-		// 	10,
-		// 	2
-		// );
+		add_action( 'woocommerce_after_checkout_validation', [ $this, 'validate_checkout_classic' ], 10, 2 );
 	}
 
 	/**
@@ -277,6 +237,59 @@ class PaymentGateway extends WC_Payment_Gateway {
 	public function payment_fields() {
 		parent::payment_fields();
 		$this->saved_payment_methods();
+	}
+
+	/**
+	 * Validate classic checkout fields.
+	 *
+	 * @param array $data
+	 * @param WP_Error $errors
+	 * @return void
+	 */
+	public function validate_checkout_classic( array $data, WP_Error $errors ) : void {
+		if ( $data['payment_method'] !== $this->id ) {
+			return;
+		}
+
+		$field_errors = $this->address_validation_service->validate_checkout_classic_address_data( $data );
+
+		if ( $field_errors ) {
+			foreach ( $field_errors as $field_key => $messages ) :
+				foreach ( $messages as $rule => $message ) :
+					$errors->add( $field_key . '_' . $rule . '_invalid', $message, [ 'id' => $field_key ] );
+				endforeach;
+			endforeach;
+		}
+	}
+
+	/**
+	 * Validate frontend fields.
+	 *
+	 * @return bool
+	 */
+	public function validate_fields() {
+		if ( is_checkout() && ! is_wc_endpoint_url() ) {
+			return true;
+		}
+
+		$errors = [];
+
+		if ( is_wc_endpoint_url( 'order-pay' ) ) {
+			$order_id = absint( get_query_var( 'order-pay' ) );
+			$order    = $this->order_service->get_wc_order( $order_id );
+			if ( $this->order_service->is_acfw_payment_method( $order ) ) {
+				$errors = $this->address_validation_service->validate_checkout_classic_address_data( $order );
+			}
+		} elseif ( is_wc_endpoint_url( 'add-payment-method' ) ) {
+			$errors = $this->address_validation_service->validate_customer_address_data( $this->customer_factory->get_wc_customer( get_current_user_id() ) );
+		}
+
+		if ( $errors ) {
+			wc_add_notice( __( 'Please correct the errors in your address.', 'acquired-com-for-woocommerce' ), 'error' );
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
