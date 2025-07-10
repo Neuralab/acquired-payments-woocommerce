@@ -71,7 +71,7 @@ class SettingsObserverTest extends TestCase {
 	 * @return void
 	 */
 	public function test_init_hooks() : void {
-		// Mock settings service value.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( '__get' )
 			->with( 'config' )
@@ -104,12 +104,12 @@ class SettingsObserverTest extends TestCase {
 			->once()
 			->andReturn( true );
 
-		// Mock settings service methods.
+		// Mock SettingsService.
+
 		$this->get_settings_service()
 			->shouldReceive( 'reload_options' )
 			->once();
 
-		// Mock validation status setting.
 		$this->get_settings_service()
 			->shouldReceive( 'set_api_credentials_validation_status' )
 			->once()

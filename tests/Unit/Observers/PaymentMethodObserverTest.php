@@ -150,7 +150,7 @@ class PaymentMethodObserverTest extends TestCase {
 		// Mock WC_Payment_Token.
 		$token = Mockery::mock( 'WC_Payment_Token_CC' );
 
-		// Mock payment method service deactivate_card.
+		// Mock PaymentMethodService.
 		$this->get_payment_method_service()
 			->shouldReceive( 'deactivate_card' )
 			->once()
@@ -199,7 +199,7 @@ class PaymentMethodObserverTest extends TestCase {
 			'type'    => 'success',
 		];
 
-		// Mock payment method service get_notice_data.
+		// Mock PaymentMethodService.
 		$this->get_payment_method_service()
 			->shouldReceive( 'get_notice_data' )
 			->once()
@@ -247,7 +247,7 @@ class PaymentMethodObserverTest extends TestCase {
 			->once()
 			->andReturn( true );
 
-		// Mock payment method service get_notice_data.
+		// Mock PaymentMethodService.
 		$this->get_payment_method_service()
 			->shouldReceive( 'get_status_key' )
 			->once()
@@ -323,7 +323,7 @@ class PaymentMethodObserverTest extends TestCase {
 			->with( $webhook_data, $hash )
 			->andThrow( new Exception( 'Failed to process webhook' ) );
 
-		// Mock logger service to log error.
+		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()

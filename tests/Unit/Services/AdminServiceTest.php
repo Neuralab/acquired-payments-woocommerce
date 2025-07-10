@@ -400,12 +400,8 @@ class AdminServiceTest extends TestCase {
 		$_GET['id'] = (string) $this->order_id;
 
 		$order = Mockery::mock( 'WC_Order' );
-		$order->shouldReceive( 'get_payment_method' )
-			->once()
-			->andReturn( 'acfw' );
-		$order->shouldReceive( 'get_id' )
-			->once()
-			->andReturn( $this->order_id );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+		$order->shouldReceive( 'get_id' )->once()->andReturn( $this->order_id );
 
 		Functions\expect( 'wc_get_order' )
 			->once()
@@ -437,11 +433,13 @@ class AdminServiceTest extends TestCase {
 	public function test_settings_notice() : void {
 		// Test when API credentials are missing.
 
-		$this->get_settings_service()->shouldReceive( 'get_api_credentials' )
+		$this->get_settings_service()
+			->shouldReceive( 'get_api_credentials' )
 			->once()
 			->andReturn( [] );
 
-		$this->get_settings_service()->shouldReceive( 'get_admin_settings_url' )
+		$this->get_settings_service()
+			->shouldReceive( 'get_admin_settings_url' )
 			->once()
 			->andReturn( 'https://example.com/wp-admin/admin.php?page=wc-settings&tab=checkout&section=acfw' );
 
@@ -454,7 +452,8 @@ class AdminServiceTest extends TestCase {
 
 		// Test when API credentials are invalid.
 
-		$this->get_settings_service()->shouldReceive( 'get_api_credentials' )
+		$this->get_settings_service()
+			->shouldReceive( 'get_api_credentials' )
 			->once()
 			->andReturn(
 				[
@@ -463,11 +462,13 @@ class AdminServiceTest extends TestCase {
 				]
 			);
 
-		$this->get_settings_service()->shouldReceive( 'are_api_credentials_valid' )
+		$this->get_settings_service()
+			->shouldReceive( 'are_api_credentials_valid' )
 			->once()
 			->andReturn( false );
 
-		$this->get_settings_service()->shouldReceive( 'get_admin_settings_url' )
+		$this->get_settings_service()
+			->shouldReceive( 'get_admin_settings_url' )
 			->once()
 			->andReturn( 'https://example.com/wp-admin/admin.php?page=wc-settings&tab=checkout&section=acfw' );
 
@@ -480,7 +481,8 @@ class AdminServiceTest extends TestCase {
 
 		// Test when everything is valid.
 
-		$this->get_settings_service()->shouldReceive( 'get_api_credentials' )
+		$this->get_settings_service()
+			->shouldReceive( 'get_api_credentials' )
 			->once()
 			->andReturn(
 				[
@@ -489,7 +491,8 @@ class AdminServiceTest extends TestCase {
 				]
 			);
 
-		$this->get_settings_service()->shouldReceive( 'are_api_credentials_valid' )
+		$this->get_settings_service()
+			->shouldReceive( 'are_api_credentials_valid' )
 			->once()
 			->andReturn( true );
 
@@ -515,7 +518,8 @@ class AdminServiceTest extends TestCase {
 
 		$asset_uri = 'https://example.com/wp-content/plugins/acquired-com-for-woocommerce/assets/dist/js/acfw-admin-order.js';
 
-		$this->get_assets_service()->shouldReceive( 'get_asset_uri' )
+		$this->get_assets_service()
+			->shouldReceive( 'get_asset_uri' )
 			->once()
 			->with( 'js/acfw-admin-order.js' )
 			->andReturn( $asset_uri );
@@ -553,7 +557,8 @@ class AdminServiceTest extends TestCase {
 
 		$asset_uri = 'https://example.com/wp-content/plugins/acquired-com-for-woocommerce/assets/dist/js/acfw-admin-settings.js';
 
-		$this->get_assets_service()->shouldReceive( 'get_asset_uri' )
+		$this->get_assets_service()
+			->shouldReceive( 'get_asset_uri' )
 			->once()
 			->with( 'js/acfw-admin-settings.js' )
 			->andReturn( $asset_uri );

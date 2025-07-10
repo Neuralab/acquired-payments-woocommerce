@@ -28,23 +28,15 @@ trait ResponseMock {
 	 * @return ResponseInterface
 	 */
 	protected function mock_response( int $status_code, string $reason_phrase, stdClass $body_content ) : ResponseInterface {
-		// Create mock stream.
+		// Mock StreamInterface.
 		$stream = Mockery::mock( StreamInterface::class );
-		$stream->shouldReceive( 'getContents' )
-			->once()
-			->andReturn( json_encode( $body_content ) );
+		$stream->shouldReceive( 'getContents' )->once()->andReturn( json_encode( $body_content ) );
 
-		// Create mock response.
+		// Mock ResponseInterface.
 		$response = Mockery::mock( ResponseInterface::class );
-		$response->shouldReceive( 'getStatusCode' )
-			->once()
-			->andReturn( $status_code );
-		$response->shouldReceive( 'getReasonPhrase' )
-			->once()
-			->andReturn( $reason_phrase );
-		$response->shouldReceive( 'getBody' )
-			->once()
-			->andReturn( $stream );
+		$response->shouldReceive( 'getStatusCode' )->once()->andReturn( $status_code );
+		$response->shouldReceive( 'getReasonPhrase' )->once()->andReturn( $reason_phrase );
+		$response->shouldReceive( 'getBody' )->once()->andReturn( $stream );
 
 		return $response;
 	}
@@ -58,23 +50,15 @@ trait ResponseMock {
 	 * @return RequestException
 	 */
 	protected function mock_request_exception( int $status_code, string $reason_phrase, stdClass $body_content ) : RequestException {
-		// Create mock stream.
+		// Mock StreamInterface.
 		$stream = Mockery::mock( StreamInterface::class );
-		$stream->shouldReceive( 'getContents' )
-			->once()
-			->andReturn( json_encode( $body_content ) );
+		$stream->shouldReceive( 'getContents' )->once()->andReturn( json_encode( $body_content ) );
 
-		// Create mock response.
+		// Mock ResponseInterface.
 		$response = Mockery::mock( ResponseInterface::class );
-		$response->shouldReceive( 'getStatusCode' )
-			->twice()
-			->andReturn( $status_code );
-		$response->shouldReceive( 'getReasonPhrase' )
-			->once()
-			->andReturn( $reason_phrase );
-		$response->shouldReceive( 'getBody' )
-			->once()
-			->andReturn( $stream );
+		$response->shouldReceive( 'getStatusCode' )->twice()->andReturn( $status_code );
+		$response->shouldReceive( 'getReasonPhrase' )->once()->andReturn( $reason_phrase );
+		$response->shouldReceive( 'getBody' )->once()->andReturn( $stream );
 
 		$request = Mockery::mock( RequestInterface::class );
 
@@ -93,23 +77,15 @@ trait ResponseMock {
 	 * @return ResponseInterface
 	 */
 	protected function mock_runtime_exception( int $status_code, string $reason_phrase ) : ResponseInterface {
-		// Create mock stream.
+		// Mock StreamInterface.
 		$stream = Mockery::mock( StreamInterface::class );
-		$stream->shouldReceive( 'getContents' )
-		->twice()
-		->andThrow( new RuntimeException( 'Failed to read stream' ) );
+		$stream->shouldReceive( 'getContents' )->twice()->andThrow( new RuntimeException( 'Failed to read stream' ) );
 
-		// Create mock response.
+		// Mock ResponseInterface.
 		$response = Mockery::mock( ResponseInterface::class );
-		$response->shouldReceive( 'getStatusCode' )
-		->twice()
-		->andReturn( $status_code );
-		$response->shouldReceive( 'getReasonPhrase' )
-		->twice()
-		->andReturn( $reason_phrase );
-		$response->shouldReceive( 'getBody' )
-		->twice()
-		->andReturn( $stream );
+		$response->shouldReceive( 'getStatusCode' )->twice()->andReturn( $status_code );
+		$response->shouldReceive( 'getReasonPhrase' )->twice()->andReturn( $reason_phrase );
+		$response->shouldReceive( 'getBody' )->twice()->andReturn( $stream );
 
 		return $response;
 	}

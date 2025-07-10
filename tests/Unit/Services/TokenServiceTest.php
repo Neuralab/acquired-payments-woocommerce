@@ -64,13 +64,8 @@ class TokenServiceTest extends TestCase {
 		$token->shouldReceive( 'get_gateway_id' )->once()->andReturn( 'acfw' );
 
 		// Mock WC_Payment_Tokens.
-
 		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
-
-		$payment_tokens->shouldReceive( 'get' )
-			->once()
-			->with( 123 )
-			->andReturn( $token );
+		$payment_tokens->shouldReceive( 'get' )->once()->with( 123 )->andReturn( $token );
 
 		// Test the method.
 		$this->assertInstanceOf( 'WC_Payment_Token_CC', $this->service->get_token( 123 ) );
@@ -84,13 +79,8 @@ class TokenServiceTest extends TestCase {
 	 */
 	public function test_get_token_not_found() : void {
 		// Mock WC_Payment_Tokens.
-
 		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
-
-		$payment_tokens->shouldReceive( 'get' )
-			->once()
-			->with( 123 )
-			->andReturn( null );
+		$payment_tokens->shouldReceive( 'get' )->once()->with( 123 )->andReturn( null );
 
 		// Test the method.
 		$this->assertNull( $this->service->get_token( 123 ) );
@@ -108,13 +98,8 @@ class TokenServiceTest extends TestCase {
 		$token->shouldReceive( 'get_gateway_id' )->once()->andReturn( 'other_payment_method' );
 
 		// Mock WC_Payment_Tokens.
-
 		$payment_tokens = Mockery::mock( 'overload:WC_Payment_Tokens' );
-
-		$payment_tokens->shouldReceive( 'get' )
-			->once()
-			->with( 123 )
-			->andReturn( $token );
+		$payment_tokens->shouldReceive( 'get' )->once()->with( 123 )->andReturn( $token );
 
 		// Test the method.
 		$this->assertNull( $this->get_private_method_value( 'get_token', 123 ) );

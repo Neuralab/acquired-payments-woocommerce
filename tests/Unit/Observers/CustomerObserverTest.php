@@ -95,19 +95,11 @@ class CustomerObserverTest extends TestCase {
 			->andReturn( true );
 
 		// Mock WC_Customer.
-
 		$customer = Mockery::mock( 'WC_Customer' );
+		$customer->shouldReceive( 'get_changes' )->once()->andReturn( [ 'email' => 'new@email.com' ] );
+		$customer->shouldReceive( 'get_meta' )->with( '_acfw_customer_id' )->once()->andReturn( 'customer_123' );
 
-		$customer->shouldReceive( 'get_changes' )
-			->once()
-			->andReturn( [ 'email' => 'new@email.com' ] );
-
-		$customer->shouldReceive( 'get_meta' )
-			->with( '_acfw_customer_id' )
-			->once()
-			->andReturn( 'customer_123' );
-
-		// Expect customer service update call.
+		// Mock CustomerService.
 		$this->get_customer_service()
 			->shouldReceive( 'update_customer_in_my_account' )
 			->once()
@@ -132,8 +124,6 @@ class CustomerObserverTest extends TestCase {
 
 		// Mock WC_Customer.
 		$customer = Mockery::mock( 'WC_Customer' );
-
-		// Should not call these methods.
 		$customer->shouldNotReceive( 'get_changes' );
 		$customer->shouldNotReceive( 'get_meta' );
 
@@ -156,15 +146,11 @@ class CustomerObserverTest extends TestCase {
 			->andReturn( true );
 
 		// Mock WC_Customer.
-
 		$customer = Mockery::mock( 'WC_Customer' );
-
-		$customer->shouldReceive( 'get_changes' )
-			->once()
-			->andReturn( [] );
-
-		// Should not check meta or update.
+		$customer->shouldReceive( 'get_changes' )->once()->andReturn( [] );
 		$customer->shouldNotReceive( 'get_meta' );
+
+		// Should not update.
 		$this->get_customer_service()->shouldNotReceive( 'update_customer_in_my_account' );
 
 		// Test the method.
@@ -184,17 +170,9 @@ class CustomerObserverTest extends TestCase {
 			->andReturn( true );
 
 		// Mock WC_Customer.
-
 		$customer = Mockery::mock( 'WC_Customer' );
-
-		$customer->shouldReceive( 'get_changes' )
-			->once()
-			->andReturn( [ 'email' => 'new@email.com' ] );
-
-		$customer->shouldReceive( 'get_meta' )
-			->with( '_acfw_customer_id' )
-			->once()
-			->andReturn( '' );
+		$customer->shouldReceive( 'get_changes' )->once()->andReturn( [ 'email' => 'new@email.com' ] );
+		$customer->shouldReceive( 'get_meta' )->with( '_acfw_customer_id' )->once()->andReturn( '' );
 
 		// Should not update.
 		$this->get_customer_service()->shouldNotReceive( 'update_customer_in_my_account' );

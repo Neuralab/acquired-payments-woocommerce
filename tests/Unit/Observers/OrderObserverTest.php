@@ -96,13 +96,13 @@ class OrderObserverTest extends TestCase {
 				}
 			);
 
-		// Test get_scheduled_action_hook action.
-
+		// Mock OrderService.
 		$this->get_order_service()
 			->shouldReceive( 'get_scheduled_action_hook' )
 			->once()
 			->andReturn( 'acfw_process_scheduled_order' );
 
+		// Test acfw_process_scheduled_order action.
 		Actions\expectAdded( 'acfw_process_scheduled_order' )
 			->once()
 			->whenHappen(
@@ -139,20 +139,19 @@ class OrderObserverTest extends TestCase {
 		$error_message      = 'Payment failed';
 		$error_message_html = '<div class="woocommerce-error">Payment failed</div>';
 
-		// Mock get_fail_notice to return the error message.
+		// Mock OrderService.
+
 		$this->get_order_service()
 			->shouldReceive( 'get_fail_notice' )
 			->once()
 			->with( $order_id )
 			->andReturn( $error_message );
 
-		// Mock wp_kses_post to return the error message.
 		Functions\expect( 'wp_kses_post' )
 			->once()
 			->with( $error_message_html )
 			->andReturn( $error_message_html );
 
-		// Mock apply_filters to return the error message HTML.
 		Functions\expect( 'apply_filters' )
 			->once()
 			->with(
@@ -177,7 +176,7 @@ class OrderObserverTest extends TestCase {
 	public function test_add_fail_notice_without_notice() : void {
 		$order_id = 123;
 
-		// Mock get_fail_notice to return empty.
+		// Mock OrderService.
 		$this->get_order_service()
 			->shouldReceive( 'get_fail_notice' )
 			->once()
@@ -221,7 +220,7 @@ class OrderObserverTest extends TestCase {
 			->with( $webhook_data, $hash )
 			->andReturn( $webhook );
 
-		// Mock process_scheduled_order.
+		// Mock OrderService.
 		$this->get_order_service()
 			->shouldReceive( 'process_scheduled_order' )
 			->once()
@@ -249,7 +248,7 @@ class OrderObserverTest extends TestCase {
 			->with( $webhook_data, $hash )
 			->andThrow( new Exception( 'Failed to process webhook' ) );
 
-		// Mock logger service to log error.
+		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
@@ -269,31 +268,28 @@ class OrderObserverTest extends TestCase {
 		// Set test data.
 		$order_id = 123;
 
-		// Mock classes.
-		$order           = Mockery::mock( 'WC_Order' );
-		$wallet          = Mockery::mock( 'Woo_Wallet' );
-		$wallet_instance = Mockery::mock();
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_id' )->once()->andReturn( $order_id );
 
-		// Mock settings service is_enabled.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'woo_wallet_refund' )
 			->andReturn( true );
 
-		// Mock order service is_acfw_payment_method.
+		// Mock OrderService.
 		$this->get_order_service()
 			->shouldReceive( 'is_acfw_payment_method' )
 			->once()
 			->with( $order )
 			->andReturn( true );
 
-		// Mock order get_id.
-		$order->shouldReceive( 'get_id' )
-			->once()
-			->andReturn( $order_id );
-
 		// Mock Woo_Wallet functionality.
+
+		$wallet          = Mockery::mock( 'Woo_Wallet' );
+		$wallet_instance = Mockery::mock();
 
 		Functions\expect( 'woo_wallet' )
 			->once()
@@ -318,18 +314,20 @@ class OrderObserverTest extends TestCase {
 		// Set test data.
 		$order_id = 123;
 
-		// Mock classes.
+		// Mock WC_Order.
 		$order = Mockery::mock( 'WC_Order' );
 
-		// Mock settings service is_enabled returns false.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'woo_wallet_refund' )
 			->andReturn( false );
 
-		// Methods should not be called.
+		// Mock OrderService.
 		$this->get_order_service()->shouldNotReceive( 'is_acfw_payment_method' );
+
+		// Woo_Wallet should not be called.
 		Functions\expect( 'woo_wallet' )->never();
 
 		// Test the method.
@@ -346,25 +344,25 @@ class OrderObserverTest extends TestCase {
 		// Set test data.
 		$order_id = 123;
 
-		// Mock classes.
+		// Mock WC_Order.
 		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldNotReceive( 'get_id' );
 
-		// Mock settings service is_enabled
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'woo_wallet_refund' )
 			->andReturn( true );
 
-		// Mock order service is_acfw_payment_method returns false.
+		// Mock OrderService.
 		$this->get_order_service()
 			->shouldReceive( 'is_acfw_payment_method' )
 			->once()
 			->with( $order )
 			->andReturn( false );
 
-		// Other methods should not be called.
-		$order->shouldNotReceive( 'get_id' );
+		// Woo_Wallet should not be called.
 		Functions\expect( 'woo_wallet' )->never();
 
 		// Test the method.
@@ -382,17 +380,18 @@ class OrderObserverTest extends TestCase {
 		// Set test data.
 		$order_id = 123;
 
-		// Mock classes.
+		// Mock WC_Order.
 		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldNotReceive( 'get_id' );
 
-		// Mock settings service is_enabled.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'woo_wallet_refund' )
 			->andReturn( true );
 
-		// Mock order service is_acfw_payment_method.
+		// Mock OrderService.
 		$this->get_order_service()
 			->shouldReceive( 'is_acfw_payment_method' )
 			->once()
@@ -402,8 +401,7 @@ class OrderObserverTest extends TestCase {
 		// Mock class_exists.
 		Functions\when( 'class_exists' )->justReturn( false );
 
-		// Other methods should not be called.
-		$order->shouldNotReceive( 'get_id' );
+		// Woo_Wallet should not be called.
 		Functions\expect( 'woo_wallet' )->never();
 
 		// Test the method.

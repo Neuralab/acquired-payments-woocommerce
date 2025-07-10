@@ -63,7 +63,7 @@ class LoggerServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_constructor() : void {
-		// Test if settings service is set correctly.
+		// Test if SettingsService is set correctly.
 		$this->assertSame( $this->get_settings_service(), $this->get_private_property_value( 'settings_service' ) );
 
 		// Test if all sensitive fields are set.
@@ -180,7 +180,8 @@ class LoggerServiceTest extends TestCase {
 	public function test_log_with_debug_disabled() : void {
 		// When the log is disabled the log method should not be called.
 
-		$this->get_settings_service()->shouldReceive( 'is_enabled' )
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'debug_log' )
 			->andReturn( false );
@@ -199,7 +200,8 @@ class LoggerServiceTest extends TestCase {
 	public function test_log_with_debug_enabled() : void {
 		// When the log is enabled the log method should be called with info level.
 
-		$this->get_settings_service()->shouldReceive( 'is_enabled' )
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'debug_log' )
 			->andReturn( true );
@@ -220,7 +222,8 @@ class LoggerServiceTest extends TestCase {
 	public function test_log_with_invalid_level() : void {
 		// test if we get info for log level when the log level is invalid.
 
-		$this->get_settings_service()->shouldReceive( 'is_enabled' )
+		$this->get_settings_service()
+			->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'debug_log' )
 			->andReturn( true );
@@ -241,7 +244,8 @@ class LoggerServiceTest extends TestCase {
 	public function test_log_with_context_and_sensitive_data() : void {
 		// Test is log context returns redacted data for all the private field names.
 
-		$this->get_settings_service()->shouldReceive( 'is_enabled' )
+		$this->get_settings_service()
+		->shouldReceive( 'is_enabled' )
 			->once()
 			->with( 'debug_log' )
 			->andReturn( true );

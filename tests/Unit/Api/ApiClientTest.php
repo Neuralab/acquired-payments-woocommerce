@@ -212,7 +212,7 @@ class ApiClientTest extends TestCase {
 
 		$response_data = $data[ $result ];
 
-		// Mock settings service get_api_credentials.
+		// Mock SettingsService.
 		$this->mock_get_api_credentials();
 
 		// Mock get_api_url for login endpoint.
@@ -650,7 +650,7 @@ class ApiClientTest extends TestCase {
 		// Mock token request.
 		$this->mock_get_access_token( 'success' );
 
-		// Mock settings service get_company_id.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->twice()
@@ -728,7 +728,7 @@ class ApiClientTest extends TestCase {
 		// Mock token request.
 		$this->mock_get_access_token( 'success' );
 
-		// Mock settings service get_company_id.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->twice()
@@ -812,7 +812,7 @@ class ApiClientTest extends TestCase {
 		// Mock token request.
 		$this->mock_get_access_token( 'error' );
 
-		// Mock logger service getting the error.
+		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->with( 'Access token in authorization header doesn\'t exist.', 'error' )
@@ -844,7 +844,7 @@ class ApiClientTest extends TestCase {
 		// Mock token request.
 		$this->mock_get_access_token( 'success' );
 
-		// Mock company ID for required header.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->twice()
@@ -1072,7 +1072,7 @@ class ApiClientTest extends TestCase {
 		// Mock token request.
 		$this->mock_get_access_token( 'success' );
 
-		// Mock company ID for required header.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->twice()
@@ -1228,7 +1228,7 @@ class ApiClientTest extends TestCase {
 	 * @return void
 	 */
 	public function test_validate_credentials_success() : void {
-		// Mock settings service get_company_id.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->once()
@@ -1237,7 +1237,7 @@ class ApiClientTest extends TestCase {
 		// Mock token request.
 		$this->mock_get_access_token( 'success' );
 
-		// Mock logger service logging the success.
+		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
@@ -1254,7 +1254,7 @@ class ApiClientTest extends TestCase {
 	 * @return void
 	 */
 	public function test_validate_credentials_error() : void {
-		// Mock settings service get_company_id.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->once()
@@ -1263,7 +1263,7 @@ class ApiClientTest extends TestCase {
 		// Mock token request.
 		$this->mock_get_access_token( 'error' );
 
-		// Mock logger service logging the error.
+		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
@@ -1283,7 +1283,7 @@ class ApiClientTest extends TestCase {
 		// Mock link body creation.
 		$this->mock_get_payment_link_default_body_creation();
 
-		// Mock settings service get_company_id.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->times( 3 )
@@ -1344,7 +1344,7 @@ class ApiClientTest extends TestCase {
 			]
 		);
 
-		// Mock logger service logging the success.
+		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
@@ -1364,7 +1364,7 @@ class ApiClientTest extends TestCase {
 		// Mock link body creation.
 		$this->mock_get_payment_link_default_body_creation();
 
-		// Mock settings service get_company_id.
+		// Mock SettingsService.
 		$this->get_settings_service()
 			->shouldReceive( 'get_company_id' )
 			->times( 3 )
@@ -1424,7 +1424,7 @@ class ApiClientTest extends TestCase {
 			]
 		);
 
-		// Mock logger service logging the error.
+		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()

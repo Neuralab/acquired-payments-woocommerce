@@ -45,6 +45,7 @@ class OrderTraitTest extends TraitTestCase {
 		// Test with valid order ID.
 
 		$order = Mockery::mock( 'WC_Order' );
+
 		Functions\expect( 'wc_get_order' )
 			->once()
 			->with( 456 )
@@ -71,32 +72,24 @@ class OrderTraitTest extends TraitTestCase {
 		// Test with order not made with our payment method.
 
 		$order = Mockery::mock( 'WC_Order' );
-		$order->shouldReceive( 'get_payment_method' )
-			->once()
-			->andReturn( 'other_payment_method' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'other_payment_method' );
 
 		$this->assertFalse( $this->test_class->is_acfw_payment_method( $order ) );
 
 		// Test with order made by our payment method.
 
 		$order = Mockery::mock( 'WC_Order' );
-		$order->shouldReceive( 'get_payment_method' )
-			->once()
-			->andReturn( 'acfw' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
 
 		$this->assertTrue( $this->test_class->is_acfw_payment_method( $order ) );
 
-		// Test with order ID for an order made by our payment method.
-
 		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+
 		Functions\expect( 'wc_get_order' )
 			->once()
 			->with( 456 )
 			->andReturn( $order );
-
-		$order->shouldReceive( 'get_payment_method' )
-			->once()
-			->andReturn( 'acfw' );
 
 		$this->assertTrue( $this->test_class->is_acfw_payment_method( 456 ) );
 	}

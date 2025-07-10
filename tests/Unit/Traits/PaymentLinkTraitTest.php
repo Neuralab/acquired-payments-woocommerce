@@ -68,14 +68,11 @@ class PaymentLinkTraitTest extends TraitTestCase {
 	 */
 	public function test_get_id_from_incoming_data_order_id() : void {
 		// Valid format.
-		$result = $this->get_private_method_value( 'get_id_from_incoming_data_order_id', '123-wc_order_key' );
-		$this->assertEquals( 123, $result );
+		$this->assertEquals( 123, $this->get_private_method_value( 'get_id_from_incoming_data_order_id', '123-wc_order_key' ) );
 
 		// Invalid formats.
-		$result = $this->get_private_method_value( 'get_id_from_incoming_data_order_id', 'invalid' );
-		$this->assertNull( $result );
-		$result = $this->get_private_method_value( 'get_id_from_incoming_data_order_id', 'invalid-key-123' );
-		$this->assertNull( $result );
+		$this->assertNull( $this->get_private_method_value( 'get_id_from_incoming_data_order_id', 'invalid' ) );
+		$this->assertNull( $this->get_private_method_value( 'get_id_from_incoming_data_order_id', 'invalid-key-123' ) );
 	}
 
 	/**
@@ -86,14 +83,11 @@ class PaymentLinkTraitTest extends TraitTestCase {
 	 */
 	public function test_get_key_from_incoming_data_order_id() : void {
 		// Valid format.
-		$result = $this->get_private_method_value( 'get_key_from_incoming_data_order_id', '123-wc_order_key' );
-		$this->assertEquals( 'wc_order_key', $result );
+		$this->assertEquals( 'wc_order_key', $this->get_private_method_value( 'get_key_from_incoming_data_order_id', '123-wc_order_key' ) );
 
 		// Invalid format
-		$result = $this->get_private_method_value( 'get_key_from_incoming_data_order_id', 'invalid' );
-		$this->assertNull( $result );
-		$result = $this->get_private_method_value( 'get_key_from_incoming_data_order_id', 'invalid-key-123' );
-		$this->assertNull( $result );
+		$this->assertNull( $this->get_private_method_value( 'get_key_from_incoming_data_order_id', 'invalid' ) );
+		$this->assertNull( $this->get_private_method_value( 'get_key_from_incoming_data_order_id', 'invalid-key-123' ) );
 	}
 
 	/**
@@ -133,14 +127,12 @@ class PaymentLinkTraitTest extends TraitTestCase {
 	 */
 	public function test_get_wc_order_from_incoming_data_with_invalid_order_key() : void {
 		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_order_key' )->once()->andReturn( 'invalid-key-123' );
+
 		Functions\expect( 'wc_get_order' )
 			->once()
 			->with( 123 )
 			->andReturn( $order );
-
-		$order->shouldReceive( 'get_order_key' )
-			->once()
-			->andReturn( 'invalid-key-123' );
 
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Order key in incoming data is invalid. Order ID: 123.' );
@@ -155,17 +147,14 @@ class PaymentLinkTraitTest extends TraitTestCase {
 	 */
 	public function test_get_wc_order_from_incoming_data_with_valid_order() : void {
 		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_order_key' )->once()->andReturn( 'wc_order_key' );
+
 		Functions\expect( 'wc_get_order' )
 			->once()
 			->with( 123 )
 			->andReturn( $order );
 
-		$order->shouldReceive( 'get_order_key' )
-			->once()
-			->andReturn( 'wc_order_key' );
-
-		$result = $this->get_private_method_value( 'get_wc_order_from_incoming_data', '123-wc_order_key' );
-		$this->assertInstanceOf( 'WC_Order', $result );
+		$this->assertInstanceOf( 'WC_Order', $this->get_private_method_value( 'get_wc_order_from_incoming_data', '123-wc_order_key' ) );
 	}
 
 	/**
@@ -235,8 +224,7 @@ class PaymentLinkTraitTest extends TraitTestCase {
 		$this->assertTrue( $result );
 
 		// Order link.
-		$result = $this->test_class->is_for_payment_method( '123-wc_order_key' );
-		$this->assertFalse( $result );
+		$this->assertFalse( $this->test_class->is_for_payment_method( '123-wc_order_key' ) );
 	}
 
 	/**
@@ -247,12 +235,10 @@ class PaymentLinkTraitTest extends TraitTestCase {
 	 */
 	public function test_is_for_order() : void {
 		// Order link.
-		$result = $this->test_class->is_for_order( '123-wc_order_key' );
-		$this->assertTrue( $result );
+		$this->assertTrue( $this->test_class->is_for_order( '123-wc_order_key' ) );
 
 		// Payment method link.
-		$result = $this->test_class->is_for_order( '456-add_payment_method_key' );
-		$this->assertFalse( $result );
+		$this->assertFalse( $this->test_class->is_for_order( '456-add_payment_method_key' ) );
 	}
 
 	/**
