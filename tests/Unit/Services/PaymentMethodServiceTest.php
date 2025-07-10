@@ -822,7 +822,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->shouldReceive( 'log' )
 			->times( 3 )
 			->withArgs(
-				function( $message ) {
+				function( $message, $level ) {
 					return in_array(
 						$message,
 						[
@@ -831,7 +831,7 @@ class PaymentMethodServiceTest extends TestCase {
 							'Payment method saved successfully from incoming webhook data. User ID: 456.',
 						],
 						true
-					);
+					) && 'debug' === $level;
 				}
 			);
 
@@ -902,7 +902,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->shouldReceive( 'log' )
 			->times( 3 )
 			->withArgs(
-				function( $message ) {
+				function( $message, $level ) {
 					return in_array(
 						$message,
 						[
@@ -911,7 +911,7 @@ class PaymentMethodServiceTest extends TestCase {
 							'Payment method saved successfully from incoming webhook data. Order ID: 789.',
 						],
 						true
-					);
+					) && 'debug' === $level;
 				}
 			);
 
@@ -1007,7 +1007,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->shouldReceive( 'log' )
 			->times( 3 )
 			->withArgs(
-				function( $message ) {
+				function( $message, $level ) {
 					return in_array(
 						$message,
 						[
@@ -1016,7 +1016,7 @@ class PaymentMethodServiceTest extends TestCase {
 							'Payment method updated successfully. User ID: 456.',
 						],
 						true
-					);
+					) && 'debug' === $level;
 				}
 			);
 
@@ -1071,21 +1071,30 @@ class PaymentMethodServiceTest extends TestCase {
 			->andThrow( new Exception( 'Token not found.' ) );
 
 		// Mock LoggerService.
+
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
-			->times( 3 )
+			->twice()
 			->withArgs(
-				function( $message ) {
+				function( $message, $level ) {
 					return in_array(
 						$message,
 						[
 							'Payment method found successfully from incoming webhook data.',
 							'User found successfully from incoming webhook data. User ID: 456.',
-							'Payment method updating failed. Token not found.',
 						],
 						true
-					);
+					) && 'debug' === $level;
 				}
+			);
+
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				'Payment method updating failed. Token not found.',
+				'error',
+				[]
 			);
 
 		// Test the method.
@@ -1165,7 +1174,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->shouldReceive( 'log' )
 			->times( 4 )
 			->withArgs(
-				function( $message ) {
+				function( $message, $level ) {
 					return in_array(
 						$message,
 						[
@@ -1175,7 +1184,7 @@ class PaymentMethodServiceTest extends TestCase {
 							'Payment method saved successfully from incoming webhook data. User ID: 456.',
 						],
 						true
-					);
+					) && 'debug' === $level;
 				}
 			);
 
@@ -1219,7 +1228,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->shouldReceive( 'log' )
 			->times( 2 )
 			->withArgs(
-				function( $message ) {
+				function( $message, $level ) {
 					return in_array(
 						$message,
 						[
@@ -1227,7 +1236,7 @@ class PaymentMethodServiceTest extends TestCase {
 							'Skipping payment method saving. Payment method already saved from redirect data. User ID: 456.',
 						],
 						true
-					);
+					) && 'debug' === $level;
 				}
 			);
 
@@ -1944,7 +1953,7 @@ class PaymentMethodServiceTest extends TestCase {
 			->shouldReceive( 'log' )
 			->times( 3 )
 			->withArgs(
-				function( $message ) {
+				function( $message, $level ) {
 					return in_array(
 						$message,
 						[
@@ -1953,7 +1962,7 @@ class PaymentMethodServiceTest extends TestCase {
 							'Payment method saved successfully from incoming redirect data. User ID: 456.',
 						],
 						true
-					);
+					) && 'debug' === $level;
 				}
 			);
 
