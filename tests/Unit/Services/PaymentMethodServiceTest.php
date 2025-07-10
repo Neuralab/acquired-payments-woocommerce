@@ -596,8 +596,8 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->mock_tokenization_setting( true );
 
 		// Mock WebhookData.
-		$data = Mockery::mock( WebhookData::class );
-		$data->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -609,10 +609,10 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->get_private_method_value(
 			'process_payment_method',
 			'saving',
-			function( $data, $log ) {
+			function( $webhook, $log ) {
 				$log( 'Test success message' );
 			},
-			$data
+			$webhook
 		);
 	}
 
@@ -627,8 +627,8 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->mock_tokenization_setting( false );
 
 		// Mock WebhookData.
-		$data = Mockery::mock( WebhookData::class );
-		$data->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -643,7 +643,7 @@ class PaymentMethodServiceTest extends TestCase {
 			'process_payment_method',
 			'saving',
 			function() {},
-			$data
+			$webhook
 		);
 	}
 
@@ -658,8 +658,8 @@ class PaymentMethodServiceTest extends TestCase {
 		$this->mock_tokenization_setting( true );
 
 		// Mock WebhookData.
-		$data = Mockery::mock( WebhookData::class );
-		$data->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
@@ -676,7 +676,7 @@ class PaymentMethodServiceTest extends TestCase {
 			function() {
 				throw new Exception( 'Test error message.' );
 			},
-			$data
+			$webhook
 		);
 	}
 
