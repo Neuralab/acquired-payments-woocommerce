@@ -270,7 +270,7 @@ class OrderService {
 
 		if ( ! $order ) {
 			$this->logger_service->log(
-				sprintf( sprintf( 'Failed to find order. Order ID: %s.', $order_id ) ),
+				sprintf( 'Failed to find order. Order ID: %s.', $order_id ),
 				'error',
 			);
 			throw new Exception( sprintf( __( 'Failed to find order.', 'acquired-com-for-woocommerce' ), $order_id ) );
