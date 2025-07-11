@@ -673,7 +673,7 @@ class CustomerServiceTest extends TestCase {
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
-			->with( 'Customer creation successful.', 'debug', Mockery::any() );
+			->with( 'Customer creation successful.', 'debug', [] );
 
 		// Test the method.
 		$this->assertSame( $customer, $this->get_private_method_value( 'create_customer', $customer, $customer_data ) );
@@ -708,7 +708,7 @@ class CustomerServiceTest extends TestCase {
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
-			->with( 'Customer creation failed.', 'error', Mockery::any() );
+			->with( 'Customer creation failed.', 'error', [] );
 
 		// Test the method.
 		$this->assertNull( $this->get_private_method_value( 'create_customer', $customer, $customer_data ) );
@@ -804,7 +804,7 @@ class CustomerServiceTest extends TestCase {
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
-			->with( 'Customer update failed.', 'error', Mockery::any() );
+			->with( 'Customer update failed.', 'error', [] );
 
 		// Test the method.
 		$this->assertNull( $this->get_private_method_value( 'update_customer', $customer, $customer_data ) );
@@ -1116,7 +1116,7 @@ class CustomerServiceTest extends TestCase {
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
-			->with( 'Customer creation failed.', 'error', Mockery::any() );
+			->with( 'Customer creation failed.', 'error', [] );
 
 		// Mock LoggerService.
 		$this->get_logger_service()
