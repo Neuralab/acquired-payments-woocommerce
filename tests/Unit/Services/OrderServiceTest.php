@@ -2052,17 +2052,16 @@ class OrderServiceTest extends TestCase {
 	}
 
 	/**
-	 * Test capture_order method with invalid order.
+	 * Test capture_order method with success.
 	 *
 	 * @covers \AcquiredComForWooCommerce\Services\OrderService::capture_order
 	 * @return void
 	 */
 	public function test_capture_order_success() : void {
 		// Set test data.
-		$order_id             = 123;
-		$transaction_order_id = '123-wc_order_key';
-		$transaction_id       = 'transaction_123';
-		$timestamp            = 1234567890;
+		$order_id       = 123;
+		$transaction_id = 'transaction_123';
+		$timestamp      = 1234567890;
 
 		// Mock WC_Order.
 		$order = Mockery::mock( 'WC_Order' );
@@ -2106,15 +2105,65 @@ class OrderServiceTest extends TestCase {
 
 		// Mock LoggerService.
 		$this->get_logger_service()
-		->shouldReceive( 'log' )
-		->once()
-		->with(
-			sprintf( 'Payment captured successfully. Order ID: %s.', $order_id ),
-			'debug',
-			Mockery::any()
-		);
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				sprintf( 'Payment captured successfully. Order ID: %s.', $order_id ),
+				'debug',
+				Mockery::any()
+			);
 
 		// Test the method.
 		$this->assertEquals( 'success', $this->service->capture_order( $order ) );
+	}
+
+	/**
+	 * Test capture_order method with decline.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::capture_order
+	 * @return void
+	 */
+	public function test_capture_order_decline() : void {
+		// Set test data.
+		$order_id       = 123;
+		$transaction_id = 'transaction_123';
+
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_id' )->once()->andReturn( $order_id );
+		$order->shouldReceive( 'get_transaction_id' )->times( 3 )->andReturn( $transaction_id );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_transaction_type' )->once()->andReturn( 'authorisation' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_order_state' )->once()->andReturn( 'authorised' );
+		$order->shouldReceive( 'get_total' )->times( 2 )->andReturn( '100.00' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+		$order->shouldReceive( 'update_status' )->once()->with( 'failed' );
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Payment capture declined with status "declined". Transaction ID: %s. Error message: Insufficient funds', $transaction_id ) );
+
+		// Mock TransactionCapture.
+		$transaction_capture = Mockery::mock( TransactionCapture::class );
+		$transaction_capture->shouldReceive( 'is_captured' )->once()->andReturn( false );
+		$transaction_capture->shouldReceive( 'get_decline_reason' )->twice()->andReturn( 'declined' );
+		$transaction_capture->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
+		$transaction_capture->shouldReceive( 'get_error_message_formatted' )->once()->with( true )->andReturn( 'Error message: Insufficient funds' );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'capture_transaction' )
+			->once()
+			->with( $transaction_id, [ 'amount' => 100.0 ] )
+			->andReturn( $transaction_capture );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				sprintf( 'Payment capture declined. Order ID: %s.', $order_id ),
+				'debug',
+				Mockery::any()
+			);
+
+		// Test the method.
+		$this->assertEquals( 'error', $this->service->capture_order( $order ) );
 	}
 }
