@@ -139,7 +139,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				'Order additional data set successfully. Order ID: 123.',
 				'debug',
-				Mockery::any()
+				[]
 			);
 	}
 
@@ -992,7 +992,7 @@ class OrderServiceTest extends TestCase {
 		->with(
 			'Payment link created successfully. Order ID: 123.',
 			'debug',
-			Mockery::any()
+			[]
 		);
 
 		// Test the method.
@@ -1063,7 +1063,7 @@ class OrderServiceTest extends TestCase {
 		->with(
 			'Payment link creation failed. Order ID: 123.',
 			'error',
-			Mockery::any()
+			[]
 		);
 
 		// Test the method.
@@ -1101,7 +1101,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				'Order additional data set successfully. Order ID: 123.',
 				'debug',
-				Mockery::any()
+				[]
 			);
 
 		// Test the method.
@@ -1139,7 +1139,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				'Order additional data set successfully. Order ID: 123.',
 				'debug',
-				Mockery::any()
+				[]
 			);
 
 		// Test the method.
@@ -1508,7 +1508,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				sprintf( 'Payment complete for order. Order ID: %d.', $order_id ),
 				'debug',
-				Mockery::any()
+				[]
 			);
 
 		// Test the method.
@@ -1559,7 +1559,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				sprintf( 'Payment complete for order. Order ID: %d.', $order_id ),
 				'debug',
-				Mockery::any()
+				[]
 			);
 
 		// Test the method.
@@ -1608,7 +1608,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				sprintf( 'Payment authorised for order. Order ID: %d.', $order_id ),
 				'debug',
-				Mockery::any()
+				[]
 			);
 
 		// Test the method.
@@ -1657,7 +1657,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				sprintf( 'Bank payment executed for order. Order ID: %d.', $order_id ),
 				'debug',
-				Mockery::any()
+				[]
 			);
 
 		// Test the method.
@@ -1707,7 +1707,7 @@ class OrderServiceTest extends TestCase {
 			->with(
 				sprintf( 'Payment failed for order. Order ID: %d.', $order_id ),
 				'debug',
-				Mockery::any()
+				[]
 			);
 
 		// Test the method.
