@@ -206,7 +206,7 @@ class OrderServiceTest extends TestCase {
 		$this->get_api_client()
 			->shouldReceive( 'get_transaction' )
 			->once()
-			->with( 'transaction_123' )
+			->with( $transaction_id )
 			->andReturn( $transaction );
 
 		return $transaction;
@@ -217,19 +217,19 @@ class OrderServiceTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	private function mock_log_for_processing() : void {
+	private function mock_log_for_processing( int $order_id ) : void {
 		// Mock LoggerService.
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->times( 3 )
 			->withArgs(
-				function( $message, $level ) {
+				function( $message, $level ) use ( $order_id ) {
 					return in_array(
 						$message,
 						[
-							'Order found successfully from incoming webhook data. Order ID: 123.',
-							'Transaction found successfully from incoming webhook data. Order ID: 123.',
-							'Order processed successfully from incoming webhook data. Order ID: 123.',
+							sprintf( 'Order found successfully from incoming webhook data. Order ID: %d.', $order_id ),
+							sprintf( 'Transaction found successfully from incoming webhook data. Order ID: %d.', $order_id ),
+							sprintf( 'Order processed successfully from incoming webhook data. Order ID: %d.', $order_id ),
 						],
 						true
 					) && 'debug' === $level;
@@ -1267,23 +1267,28 @@ class OrderServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_order_with_already_processed_transaction() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( '123-wc_order_key' );
-		$webhook->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_123' );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->once()->andReturn( $transaction_id );
 		$webhook->shouldReceive( 'get_type' )->once()->andReturn( 'webhook' );
 		$webhook->shouldReceive( 'get_log_data' )->twice()->andReturn( [] );
 
 		// Mock WC_Order.
 		$order = Mockery::mock( 'WC_Order' );
-		$order->shouldReceive( 'get_id' )->twice()->andReturn( 123 );
+		$order->shouldReceive( 'get_id' )->twice()->andReturn( $order_id );
 		$order->shouldReceive( 'get_order_key' )->once()->andReturn( 'wc_order_key' );
-		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_123' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( $transaction_id );
 
 		// Mock wc_get_order.
 		Functions\expect( 'wc_get_order' )
 			->once()
-			->with( 123 )
+			->with( $order_id )
 			->andReturn( $order );
 
 		// Mock LoggerService.
@@ -1291,12 +1296,12 @@ class OrderServiceTest extends TestCase {
 			->shouldReceive( 'log' )
 			->twice()
 			->withArgs(
-				function( $message, $level ) {
+				function( $message, $level ) use ( $order_id ) {
 					return in_array(
 						$message,
 						[
-							'Order found successfully from incoming webhook data. Order ID: 123.',
-							'Order transaction already processed. Skipping the processing. Order ID: 123.',
+							sprintf( 'Order found successfully from incoming webhook data. Order ID: %d.', $order_id ),
+							sprintf( 'Order transaction already processed. Skipping the processing. Order ID: %d.', $order_id ),
 						],
 						true
 					) && 'debug' === $level;
@@ -1314,55 +1319,148 @@ class OrderServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_order_with_already_updated_order() : void {
-		$this->markTestIncomplete( 'This test is still getting written.' );
+		// Set test data.
+		$order_id               = 123;
+		$transaction_order_id   = '123-wc_order_key';
+		$transaction_id         = 'transaction_123';
+		$timestamp              = 1234567890;
+		$earlier_timestamp      = $timestamp - 1000;
+		$earlier_transaction_id = 'transaction_456';
+
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( '123-wc_order_key' );
-		$webhook->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_456' );
-		$webhook->shouldReceive( 'get_type' )->once()->andReturn( 'webhook' );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $earlier_transaction_id );
+		$webhook->shouldReceive( 'get_type' )->times( 3 )->andReturn( 'webhook' );
 		$webhook->shouldReceive( 'get_log_data' )->twice()->andReturn( [] );
 
 		// Mock WC_Order.
 		$order = Mockery::mock( 'WC_Order' );
-		$order->shouldReceive( 'get_id' )->twice()->andReturn( 123 );
+		$order->shouldReceive( 'get_id' )->times( 3 )->andReturn( $order_id );
 		$order->shouldReceive( 'get_order_key' )->once()->andReturn( 'wc_order_key' );
-		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_123' );
-		$order->shouldReceive( 'get_meta' )->once()->with( '_acfw_order_time_updated' )->andReturn( '456' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( $transaction_id );
+		$order->shouldReceive( 'get_meta' )->once()->with( '_acfw_order_time_updated' )->andReturn( $timestamp ); // Simulate that the order was updated after the transaction creation.
 
 		// Mock wc_get_order.
 		Functions\expect( 'wc_get_order' )
 			->once()
-			->with( 123 )
+			->with( $order_id )
 			->andReturn( $order );
 
 		// Mock Transaction.
 		$transaction = Mockery::mock( Transaction::class );
-		$transaction->shouldReceive( 'get_transaction_id' )->twice()->andReturn( 'transaction_456' );
-		$transaction->shouldReceive( 'get_status' )->once()->andReturn( 'success' );
-		$transaction->shouldReceive( 'get_created_timestamp' )->twice()->andReturn( 123 );
+		$transaction->shouldReceive( 'get_created_timestamp' )->once()->andReturn( $earlier_timestamp );
+		$transaction->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
 		$transaction->shouldReceive( 'request_is_error' )->once()->andReturn( false );
 
 		// Mock ApiClient.
 		$this->get_api_client()
 			->shouldReceive( 'get_transaction' )
 			->once()
-			->with( 'transaction_456' )
+			->with( $earlier_transaction_id )
 			->andReturn( $transaction );
 
 		// Mock LoggerService.
 
-		$this->mock_log_for_processing();
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->times( 3 )
+			->withArgs(
+				function( $message, $level ) {
+					return in_array(
+						$message,
+						[
+							'Order found successfully from incoming webhook data. Order ID: 123.',
+							'Transaction found successfully from incoming webhook data. Order ID: 123.',
+							'Incoming webhook time created is not newer than the order time updated. Skipping the processing. Order ID: 123.',
+						],
+						true
+					) && 'debug' === $level;
+				}
+			);
+
+		// Test the method.
+		$this->service->process_order( $webhook );
+	}
+
+	/**
+	 * Test process_order method with invalid order status.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::process_order
+	 * @return void
+	 */
+	public function test_process_order_with_invalid_order_status() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
+		$webhook->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
+		$webhook->shouldReceive( 'get_log_data' )->twice()->andReturn( [] );
+
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_id' )->times( 3 )->andReturn( $order_id );
+		$order->shouldReceive( 'get_order_key' )->once()->andReturn( 'wc_order_key' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( null );
+		$order->shouldReceive( 'get_meta' )->once()->with( '_acfw_order_time_updated' )->andReturn( '' );
+		$order->shouldReceive( 'has_status' )->once()->with( [ 'pending', 'failed', 'on-hold' ] )->andReturn( false );
+		$order->shouldReceive( 'get_status' )->once()->andReturn( 'paid' );
+
+		// Mock wc_get_order.
+		Functions\expect( 'wc_get_order' )
+			->once()
+			->with( $order_id )
+			->andReturn( $order );
+
+		// Mock Transaction.
+		$transaction = Mockery::mock( Transaction::class );
+		$transaction->shouldReceive( 'get_created_timestamp' )->once()->andReturn( $timestamp );
+		$transaction->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
+		$transaction->shouldReceive( 'request_is_error' )->once()->andReturn( false );
+
+		// Mock ApiClient.
+		$this->get_api_client()
+			->shouldReceive( 'get_transaction' )
+			->once()
+			->with( $transaction_id )
+			->andReturn( $transaction );
+
+		// Mock LoggerService.
+
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->times( 2 )
+			->withArgs(
+				function( $message, $level ) {
+					return in_array(
+						$message,
+						[
+							'Order found successfully from incoming webhook data. Order ID: 123.',
+							'Transaction found successfully from incoming webhook data. Order ID: 123.',
+						],
+						true
+					) && 'debug' === $level;
+				}
+			);
 
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
 			->with(
-				'Payment complete for order. Order ID: 123.',
-				'debug',
-				Mockery::any()
+				'Error processing order from incoming webhook data. Received incoming webhook data for an order that can\'t be processed again. Order ID: 123, order status: paid.',
+				'error',
+				[]
 			);
 
 		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Received incoming webhook data for an order that can\'t be processed again. Order ID: 123, order status: paid.' );
 		$this->service->process_order( $webhook );
 	}
 
@@ -1373,24 +1471,25 @@ class OrderServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_order_with_success_status_and_capture_type() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( '123-wc_order_key' );
-		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( 'transaction_123' );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
 		$webhook->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
 		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
-
-		// Set test data.
-		$order_id       = 123;
-		$transaction_id = 'transaction_123';
-		$timestamp      = 1234567890;
 
 		// Mock WC_Order.
 		$order = $this->mock_order_for_processing( 'capture', 'success', $order_id, $transaction_id, $timestamp );
 		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_state', 'completed' );
 		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_time_completed', $timestamp );
 		$order->shouldReceive( 'payment_complete' )->once();
-		$order->shouldReceive( 'add_order_note' )->once()->with( 'Payment successful. Transaction ID: transaction_123.' );
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Payment successful. Transaction ID: %s.', $transaction_id ) );
 
 		// Mock Transaction.
 		$transaction = $this->mock_transaction_for_processing( $transaction_id, 'success', $timestamp );
@@ -1401,13 +1500,13 @@ class OrderServiceTest extends TestCase {
 
 		// Mock LoggerService.
 
-		$this->mock_log_for_processing();
+		$this->mock_log_for_processing( $order_id );
 
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
 			->with(
-				'Payment complete for order. Order ID: 123.',
+				sprintf( 'Payment complete for order. Order ID: %d.', $order_id ),
 				'debug',
 				Mockery::any()
 			);
@@ -1423,24 +1522,25 @@ class OrderServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_order_with_settled_status_and_capture_type() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( '123-wc_order_key' );
-		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( 'transaction_123' );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
 		$webhook->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
 		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
-
-		// Set test data.
-		$order_id       = 123;
-		$transaction_id = 'transaction_123';
-		$timestamp      = 1234567890;
 
 		// Mock WC_Order.
 		$order = $this->mock_order_for_processing( 'capture', 'settled', $order_id, $transaction_id, $timestamp );
 		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_state', 'completed' );
 		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_time_completed', $timestamp );
 		$order->shouldReceive( 'payment_complete' )->once();
-		$order->shouldReceive( 'add_order_note' )->once()->with( 'Payment successful. Transaction ID: transaction_123.' );
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Payment successful. Transaction ID: %s.', $transaction_id ) );
 
 		// Mock Transaction.
 		$transaction = $this->mock_transaction_for_processing( $transaction_id, 'settled', $timestamp );
@@ -1451,13 +1551,13 @@ class OrderServiceTest extends TestCase {
 
 		// Mock LoggerService.
 
-		$this->mock_log_for_processing();
+		$this->mock_log_for_processing( $order_id );
 
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
 			->with(
-				'Payment complete for order. Order ID: 123.',
+				sprintf( 'Payment complete for order. Order ID: %d.', $order_id ),
 				'debug',
 				Mockery::any()
 			);
@@ -1473,23 +1573,24 @@ class OrderServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_order_with_success_status_and_authorisation_type() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( '123-wc_order_key' );
-		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( 'transaction_123' );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
 		$webhook->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
 		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
-
-		// Set test data.
-		$order_id       = 123;
-		$transaction_id = 'transaction_123';
-		$timestamp      = 1234567890;
 
 		// Mock WC_Order.
 		$order = $this->mock_order_for_processing( 'authorisation', 'success', $order_id, $transaction_id, $timestamp );
 		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_state', 'authorised' );
 		$order->shouldReceive( 'update_status' )->once()->with( 'on-hold' );
-		$order->shouldReceive( 'add_order_note' )->once()->with( 'Payment authorised. Transaction ID: transaction_123.' );
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Payment authorised. Transaction ID: %s.', $transaction_id ) );
 
 		// Mock Transaction.
 		$transaction = $this->mock_transaction_for_processing( $transaction_id, 'success', $timestamp );
@@ -1499,13 +1600,13 @@ class OrderServiceTest extends TestCase {
 
 		// Mock LoggerService.
 
-		$this->mock_log_for_processing();
+		$this->mock_log_for_processing( $order_id );
 
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
 			->with(
-				'Payment authorised for order. Order ID: 123.',
+				sprintf( 'Payment authorised for order. Order ID: %d.', $order_id ),
 				'debug',
 				Mockery::any()
 			);
@@ -1521,23 +1622,24 @@ class OrderServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_order_with_executed_status_and_capture_type() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( '123-wc_order_key' );
-		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( 'transaction_123' );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
 		$webhook->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
 		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
-
-		// Set test data.
-		$order_id       = 123;
-		$transaction_id = 'transaction_123';
-		$timestamp      = 1234567890;
 
 		// Mock WC_Order.
 		$order = $this->mock_order_for_processing( 'capture', 'executed', $order_id, $transaction_id, $timestamp );
 		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_state', 'executed' );
 		$order->shouldReceive( 'update_status' )->once()->with( 'on-hold' );
-		$order->shouldReceive( 'add_order_note' )->once()->with( 'Bank payment executed. Transaction ID: transaction_123.' );
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Bank payment executed. Transaction ID: %s.', $transaction_id ) );
 
 		// Mock Transaction.
 		$transaction = $this->mock_transaction_for_processing( $transaction_id, 'executed', $timestamp );
@@ -1547,13 +1649,13 @@ class OrderServiceTest extends TestCase {
 
 		// Mock LoggerService.
 
-		$this->mock_log_for_processing();
+		$this->mock_log_for_processing( $order_id );
 
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
 			->with(
-				'Bank payment executed for order. Order ID: 123.',
+				sprintf( 'Bank payment executed for order. Order ID: %d.', $order_id ),
 				'debug',
 				Mockery::any()
 			);
@@ -1569,24 +1671,25 @@ class OrderServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function test_process_order_with_failed_status_and_capture_type() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
 		// Mock WebhookData.
 		$webhook = Mockery::mock( WebhookData::class );
-		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( '123-wc_order_key' );
-		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( 'transaction_123' );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
 		$webhook->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
 		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
-
-		// Set test data.
-		$order_id       = 123;
-		$transaction_id = 'transaction_123';
-		$timestamp      = 1234567890;
 
 		// Mock WC_Order.
 		$order = $this->mock_order_for_processing( 'capture', 'failed', $order_id, $transaction_id, $timestamp );
 		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_state', 'failed' );
 		$order->shouldReceive( 'update_status' )->once()->with( 'failed' );
 		$order->shouldReceive( 'get_meta' )->with( '_acfw_transaction_status' )->once()->andReturn( 'failed' );
-		$order->shouldReceive( 'add_order_note' )->once()->with( 'Payment failed with status "failed". Transaction ID: transaction_123.' );
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Payment failed with status "failed". Transaction ID: %s.', $transaction_id ) );
 
 		// Mock Transaction.
 		$transaction = $this->mock_transaction_for_processing( $transaction_id, 'failed', $timestamp );
@@ -1596,13 +1699,13 @@ class OrderServiceTest extends TestCase {
 
 		// Mock LoggerService.
 
-		$this->mock_log_for_processing();
+		$this->mock_log_for_processing( $order_id );
 
 		$this->get_logger_service()
 			->shouldReceive( 'log' )
 			->once()
 			->with(
-				'Payment failed for order. Order ID: 123.',
+				sprintf( 'Payment failed for order. Order ID: %d.', $order_id ),
 				'debug',
 				Mockery::any()
 			);
