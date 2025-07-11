@@ -578,11 +578,12 @@ class OrderService {
 		$log_level = 'debug';
 
 		if ( $captured ) {
-			$order->payment_complete( $response->get_transaction_id() );
+			$time_updated = $this->get_transaction_time_updated( $response->get_transaction_id() );
 
+			$order->payment_complete( $response->get_transaction_id() );
 			$order->update_meta_data( '_acfw_order_state', 'completed' );
-			$order->update_meta_data( '_acfw_order_time_completed', $this->get_transaction_time_updated( $response->get_transaction_id() ) );
-			$order->update_meta_data( '_acfw_order_time_updated', $this->get_transaction_time_updated( $response->get_transaction_id() ) );
+			$order->update_meta_data( '_acfw_order_time_completed', $time_updated );
+			$order->update_meta_data( '_acfw_order_time_updated', $time_updated );
 			$order->save();
 
 			$order_note = sprintf(
