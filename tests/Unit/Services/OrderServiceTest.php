@@ -20,6 +20,7 @@ use AcquiredComForWooCommerce\Services\OrderService;
 use AcquiredComForWooCommerce\Api\Response\PaymentLink;
 use AcquiredComForWooCommerce\Api\Response\Transaction;
 use AcquiredComForWooCommerce\Api\IncomingData\WebhookData;
+use AcquiredComForWooCommerce\Api\IncomingData\RedirectData;
 use Exception;
 use Mockery;
 use Mockery\MockInterface;
@@ -177,7 +178,7 @@ class OrderServiceTest extends TestCase {
 		// Mock wc_get_order.
 		Functions\expect( 'wc_get_order' )
 			->once()
-			->with( 123 )
+			->with( $order_id )
 			->andReturn( $order );
 
 		return $order;
@@ -1741,5 +1742,285 @@ class OrderServiceTest extends TestCase {
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'No valid order ID in incoming data.' );
 		$this->service->process_order( $webhook );
+	}
+
+	/**
+	 * Test process_scheduled_order method success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::process_scheduled_order
+	 * @return void
+	 */
+	public function test_process_scheduled_order_success() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( $transaction_order_id );
+		$webhook->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
+		$webhook->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
+		$webhook->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
+
+		// Mock WC_Order.
+		$order = $this->mock_order_for_processing( 'capture', 'success', $order_id, $transaction_id, $timestamp );
+		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_state', 'completed' );
+		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_time_completed', $timestamp );
+		$order->shouldReceive( 'payment_complete' )->once();
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Payment successful. Transaction ID: %s.', $transaction_id ) );
+
+		// Mock Transaction.
+		$transaction = $this->mock_transaction_for_processing( $transaction_id, 'success', $timestamp );
+		$transaction->shouldReceive( 'get_created_timestamp' )->once()->andReturn( $timestamp );
+
+		// Mock set_additional_order_data.
+		$this->mock_set_additional_order_data( $order, $transaction );
+
+		// Mock LoggerService.
+
+		$this->mock_log_for_processing( $order_id );
+
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				sprintf( 'Payment complete for order. Order ID: %d.', $order_id ),
+				'debug',
+				[]
+			);
+
+		// Test the method.
+		$this->service->process_scheduled_order( $webhook );
+	}
+
+	/**
+	 * Test process_scheduled_order error.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::process_scheduled_order
+	 * @return void
+	 */
+	public function test_process_scheduled_order_error() : void {
+		// Mock WebhookData.
+		$webhook = Mockery::mock( WebhookData::class );
+		$webhook->shouldReceive( 'get_order_id' )->twice()->andReturn( 'invalid_id' );
+		$webhook->shouldReceive( 'get_log_data' )->twice()->andReturn( [] );
+		$webhook->shouldReceive( 'get_type' )->once()->andReturn( 'webhook' );
+
+		// Mock LoggerService.
+
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				'Error processing order from incoming webhook data. No valid order ID in incoming data.',
+				'error',
+				[]
+			);
+
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				'Error processing order from scheduled webhook data. Error: "No valid order ID in incoming data.".',
+				'error',
+				[]
+			);
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'No valid order ID in incoming data.' );
+		$this->service->process_scheduled_order( $webhook );
+	}
+
+	/**
+	 * Test confirm_order method success.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::confirm_order
+	 * @return void
+	 */
+	public function test_confirm_order_success() : void {
+		// Set test data.
+		$order_id             = 123;
+		$transaction_order_id = '123-wc_order_key';
+		$transaction_id       = 'transaction_123';
+		$timestamp            = 1234567890;
+
+		// Mock RedirectData.
+		$redirect = Mockery::mock( RedirectData::class );
+		$redirect->shouldReceive( 'get_order_id' )->times( 3 )->andReturn( $transaction_order_id );
+		$redirect->shouldReceive( 'get_transaction_id' )->twice()->andReturn( $transaction_id );
+		$redirect->shouldReceive( 'get_type' )->times( 4 )->andReturn( 'webhook' );
+		$redirect->shouldReceive( 'get_log_data' )->times( 3 )->andReturn( [] );
+
+		// Mock WC_Order.
+		$order = $this->mock_order_for_processing( 'capture', 'success', $order_id, $transaction_id, $timestamp );
+		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_state', 'completed' );
+		$order->shouldReceive( 'update_meta_data' )->once()->with( '_acfw_order_time_completed', $timestamp );
+		$order->shouldReceive( 'payment_complete' )->once();
+		$order->shouldReceive( 'add_order_note' )->once()->with( sprintf( 'Payment successful. Transaction ID: %s.', $transaction_id ) );
+		$order->shouldReceive( 'get_order_key' )->once()->andReturn( 'wc_order_key' );
+
+		// Mock wc_get_order once more in OrderService::confirm_order.
+		Functions\expect( 'wc_get_order' )
+			->once()
+			->with( $order_id )
+			->andReturn( $order );
+
+		// Mock Transaction.
+		$transaction = $this->mock_transaction_for_processing( $transaction_id, 'success', $timestamp );
+		$transaction->shouldReceive( 'get_created_timestamp' )->once()->andReturn( $timestamp );
+
+		// Mock set_additional_order_data.
+		$this->mock_set_additional_order_data( $order, $transaction );
+
+		// Mock LoggerService.
+
+		$this->mock_log_for_processing( $order_id );
+
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				sprintf( 'Payment complete for order. Order ID: %d.', $order_id ),
+				'debug',
+				[]
+			);
+
+		// Test the method.
+		$this->assertSame( $order, $this->service->confirm_order( $redirect ) );
+	}
+
+	/**
+	 * Test confirm_order method error.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::confirm_order
+	 * @return void
+	 */
+	public function test_confirm_order_error() : void {
+		// Mock WebhookData.
+		$redirect = Mockery::mock( RedirectData::class );
+		$redirect->shouldReceive( 'get_order_id' )->once()->andReturn( 'invalid_id' );
+		$redirect->shouldReceive( 'get_log_data' )->once()->andReturn( [] );
+
+		// Mock LoggerService.
+		$this->get_logger_service()
+			->shouldReceive( 'log' )
+			->once()
+			->with(
+				'Error processing order from incoming redirect data. No valid order ID in incoming data.',
+				'error',
+				[]
+			);
+
+		// Test the method.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'No valid order ID in incoming data.' );
+		$this->service->confirm_order( $redirect );
+	}
+
+	/**
+	 * Test can_be_captured method with valid order.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::can_be_captured
+	 * @return void
+	 */
+	public function test_can_be_captured_with_valid_order() : void {
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_123' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_transaction_type' )->once()->andReturn( 'authorisation' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_order_state' )->once()->andReturn( 'authorised' );
+		$order->shouldReceive( 'get_total' )->once()->andReturn( '100.00' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+
+		// Test the method.
+		$this->assertTrue( $this->service->can_be_captured( $order ) );
+	}
+
+	/**
+	 * Test can_be_captured method with non-ACFW payment method.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::can_be_captured
+	 * @return void
+	 */
+	public function test_can_be_captured_with_non_acfw_payment_method() : void {
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'other_payment_method' );
+
+		// Test the method.
+		$this->assertFalse( $this->service->can_be_captured( $order ) );
+	}
+
+	/**
+	 * Test can_be_captured method with missing transaction ID.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::can_be_captured
+	 * @return void
+	 */
+	public function test_can_be_captured_with_missing_transaction_id() : void {
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( '' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+
+		// Test the method.
+		$this->assertFalse( $this->service->can_be_captured( $order ) );
+	}
+
+	/**
+	 * Test can_be_captured method with wrong transaction type.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::can_be_captured
+	 * @return void
+	 */
+	public function test_can_be_captured_with_wrong_transaction_type() : void {
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_transaction_type' )->once()->andReturn( 'authorised' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_123' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+
+		// Test the method.
+		$this->assertFalse( $this->service->can_be_captured( $order ) );
+	}
+
+	/**
+	 * Test can_be_captured method with wrong order state.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::can_be_captured
+	 * @return void
+	 */
+	public function test_can_be_captured_with_wrong_order_state() : void {
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_order_state' )->once()->andReturn( 'completed' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_transaction_type' )->once()->andReturn( 'authorisation' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_123' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+
+		// Test the method.
+		$this->assertFalse( $this->service->can_be_captured( $order ) );
+	}
+
+	/**
+	 * Test can_be_captured method with zero total.
+	 *
+	 * @covers \AcquiredComForWooCommerce\Services\OrderService::can_be_captured
+	 * @return void
+	 */
+	public function test_can_be_captured_with_zero_total() : void {
+		// Mock WC_Order.
+		$order = Mockery::mock( 'WC_Order' );
+		$order->shouldReceive( 'get_total' )->once()->andReturn( '0.00' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_order_state' )->once()->andReturn( 'authorised' );
+		$order->shouldReceive( 'get_meta' )->with( '_acfw_transaction_type' )->once()->andReturn( 'authorisation' );
+		$order->shouldReceive( 'get_transaction_id' )->once()->andReturn( 'transaction_123' );
+		$order->shouldReceive( 'get_payment_method' )->once()->andReturn( 'acfw' );
+
+		// Test the method.
+		$this->assertFalse( $this->service->can_be_captured( $order ) );
 	}
 }
